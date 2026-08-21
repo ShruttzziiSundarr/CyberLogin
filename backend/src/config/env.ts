@@ -1,4 +1,12 @@
+import dotenv from 'dotenv';
 import { z } from 'zod';
+
+// In tests, src/test-env.ts (a Jest setupFile) already populates process.env
+// directly, so skip loading a local .env file to keep test config isolated
+// and deterministic.
+if (process.env.NODE_ENV !== 'test') {
+  dotenv.config();
+}
 
 const boolFromString = z
   .string()
@@ -30,7 +38,12 @@ const envSchema = z.object({
   PD_BIND_PASSWORD: z.string().optional().default(''),
   PD_SEARCH_BASE: z.string().optional().default(''),
 
-  FEATURE_MFA_POLICY_WRITE: boolFromString
+  FEATURE_MFA_POLICY_WRITE: boolFromString,
+
+  // When true, all PingFederate admin API calls are served by an in-memory
+  // mock instead of a real PF instance, so the whole portal works standalone
+  // as a demo. Never enable in production.
+  MOCK_PING: boolFromString
 });
 
 export type Env = z.infer<typeof envSchema>;

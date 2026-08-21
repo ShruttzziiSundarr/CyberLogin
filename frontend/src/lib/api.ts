@@ -1,4 +1,4 @@
-import { httpClient } from './httpClient';
+import { httpClient, setCsrfToken } from './httpClient';
 import type {
   AppDetail,
   AppSummary,
@@ -14,12 +14,28 @@ import type {
 
 // --- Auth ---
 
-export async function login(body: LoginRequest): Promise<void> {
-  await httpClient.post('/auth/login', body);
+interface SessionResponse {
+  user: { username: string };
+  csrfToken: string;
+}
+
+export async function login(body: LoginRequest): Promise<SessionResponse> {
+  const { data } = await httpClient.post<SessionResponse>('/auth/login', body);
+  setCsrfToken(data.csrfToken);
+  return data;
+}
+
+// Recovers the session + a fresh CSRF token after a page reload (the token
+// from login only lives in JS memory). Used by AuthGuard on mount.
+export async function getSession(): Promise<SessionResponse> {
+  const { data } = await httpClient.get<SessionResponse>('/auth/session');
+  setCsrfToken(data.csrfToken);
+  return data;
 }
 
 export async function logout(): Promise<void> {
   await httpClient.post('/auth/logout');
+  setCsrfToken(null);
 }
 
 // --- Platform status ---

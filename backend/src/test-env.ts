@@ -16,3 +16,7 @@ process.env.PD_BIND_DN = process.env.PD_BIND_DN || 'cn=Directory Manager';
 process.env.PD_BIND_PASSWORD = process.env.PD_BIND_PASSWORD || 'test-bind-password';
 process.env.PD_SEARCH_BASE = process.env.PD_SEARCH_BASE || 'ou=people,dc=example,dc=com';
 process.env.FEATURE_MFA_POLICY_WRITE = process.env.FEATURE_MFA_POLICY_WRITE || 'false';
+// Tests exercise PingFederateClient against a mocked HTTP layer (nock), not
+// the in-memory MockIdentityProvider — force this off regardless of what a
+// local .env has, since dotenv.config() in env.ts would otherwise pick it up.
+process.env.MOCK_PING = 'false';

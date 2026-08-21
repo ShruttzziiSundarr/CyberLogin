@@ -30,6 +30,16 @@ authRouter.post('/login', (req, res, next) => {
   });
 });
 
+// Lets the frontend recover a valid session + CSRF token after a page reload
+// (the CSRF token from /login only lives in JS memory on the client).
+authRouter.get('/session', (req, res) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: { code: 'unauthorized', message: 'Not authenticated' } });
+  }
+  const csrfToken = generateCsrfToken(req, res);
+  res.json({ user: req.session.user, csrfToken });
+});
+
 authRouter.post('/logout', (req, res, next) => {
   req.session.destroy((err) => {
     if (err) return next(err);

@@ -5,19 +5,17 @@ import type { ApiErrorEnvelope } from '../types/api';
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api';
 
 /**
- * ASSUMPTION: the backend is not yet confirmed to implement CSRF protection,
- * so this is a best-effort, standards-shaped guess: a double-submit cookie
- * named `XSRF-TOKEN` is read client-side and echoed back as the
- * `X-CSRF-Token` request header on state-changing requests (POST/PUT/DELETE).
- * If the backend uses different cookie/header names (or none at all), update
- * CSRF_COOKIE_NAME / CSRF_HEADER_NAME below accordingly.
+ * The backend's CSRF cookie is httpOnly (not readable from JS by design), so
+ * the double-submit token is instead handed back in the JSON body of
+ * POST /auth/login and GET /auth/session, and echoed here as the
+ * `x-csrf-token` header on state-changing requests.
  */
-const CSRF_COOKIE_NAME = 'XSRF-TOKEN';
-const CSRF_HEADER_NAME = 'X-CSRF-Token';
+const CSRF_HEADER_NAME = 'x-csrf-token';
 
-function readCookie(name: string): string | null {
-  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-  return match ? decodeURIComponent(match[1]) : null;
+let csrfToken: string | null = null;
+
+export function setCsrfToken(token: string | null): void {
+  csrfToken = token;
 }
 
 export const httpClient = axios.create({
@@ -28,12 +26,9 @@ export const httpClient = axios.create({
 
 httpClient.interceptors.request.use((config) => {
   const method = (config.method ?? 'get').toLowerCase();
-  if (['post', 'put', 'delete', 'patch'].includes(method)) {
-    const token = readCookie(CSRF_COOKIE_NAME);
-    if (token) {
-      config.headers = config.headers ?? {};
-      config.headers[CSRF_HEADER_NAME] = token;
-    }
+  if (['post', 'put', 'delete', 'patch'].includes(method) && csrfToken) {
+    config.headers = config.headers ?? {};
+    config.headers[CSRF_HEADER_NAME] = csrfToken;
   }
   return config;
 });

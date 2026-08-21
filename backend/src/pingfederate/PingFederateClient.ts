@@ -3,6 +3,7 @@ import https from 'https';
 import { env } from '../config/env';
 import { logger, redactSecrets } from '../utils/logger';
 import { mapUpstreamError } from './errors';
+import { MockIdentityProvider } from './MockIdentityProvider';
 import {
   AuthenticationPolicyTree,
   IdentityProvider,
@@ -190,11 +191,11 @@ export class PingFederateClient implements IdentityProvider {
   }
 }
 
-let singleton: PingFederateClient | null = null;
+let singleton: IdentityProvider | null = null;
 
-export function getPingFederateClient(): PingFederateClient {
+export function getPingFederateClient(): IdentityProvider {
   if (!singleton) {
-    singleton = new PingFederateClient();
+    singleton = env.MOCK_PING ? new MockIdentityProvider() : new PingFederateClient();
   }
   return singleton;
 }
