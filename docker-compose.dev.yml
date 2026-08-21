@@ -1,0 +1,24 @@
+# DEV-ONLY dev IdP stand-in. NOT part of the production path.
+#
+# Keycloak is provided here purely so contributors without a PingFederate
+# license can bring up *something* on the admin-API side to poke at while
+# hacking on the portal UI/UX. It does NOT implement PingFederate's admin
+# API surface (X-XSRF-Header, /pf-admin-api/v1/* routes, etc). The
+# IdentityProvider interface in backend/src/pingfederate is written against
+# the real PingFederate admin API; there is no Keycloak adapter yet (the
+# interface just leaves room for one later).
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+services:
+  dev-idp:
+    image: quay.io/keycloak/keycloak:24.0
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    profiles:
+      - dev-idp

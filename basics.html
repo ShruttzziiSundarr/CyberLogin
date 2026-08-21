@@ -1,0 +1,2098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assertion Anatomy Lab</title>
+<style>
+  :root{
+    --ink:#0F1620;
+    --panel:#17202B;
+    --panel-2:#1E2938;
+    --line:#2C3A4B;
+    --parchment:#E8E4DA;
+    --muted:#8A94A3;
+    --steel:#6E9CC4;
+    --seal:#C2413A;
+    --amber:#D4A03C;
+    --verify:#4E9A8F;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--ink);
+    color:var(--parchment);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  header{
+    border-bottom:1px solid var(--line);
+    padding:22px 28px 0;
+  }
+  .title{
+    font-size:26px;
+    font-weight:650;
+    letter-spacing:-.02em;
+    margin:6px 0 2px;
+  }
+  .sub{color:var(--muted);font-size:13px;margin:0 0 18px;max-width:70ch}
+  nav{display:flex;gap:2px}
+  .tab{
+    background:none;border:1px solid var(--line);border-bottom:none;
+    color:var(--muted);
+    font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    padding:10px 16px;cursor:pointer;
+    border-radius:3px 3px 0 0;
+    transform:translateY(1px);
+  }
+  .tab:hover{color:var(--parchment)}
+  .tab[aria-selected="true"]{
+    background:var(--panel);color:var(--parchment);
+    border-color:var(--line);
+    box-shadow:inset 0 2px 0 var(--steel);
+  }
+  .tab:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+  main{padding:24px 28px 60px;max-width:1400px}
+  .grid{display:grid;grid-template-columns:1.25fr 1fr;gap:20px;align-items:start}
+  @media (max-width:980px){.grid{grid-template-columns:1fr}}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+  }
+  .card-head{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding:12px 16px;border-bottom:1px solid var(--line);
+  }
+  .card-body{padding:16px}
+
+  pre.doc{
+    font-family:var(--mono);
+    font-size:12.5px;
+    line-height:1.85;
+    margin:0;
+    white-space:pre-wrap;
+    word-break:break-word;
+    color:#B9C4D2;
+  }
+  .tag{color:#7E93AB}
+  .attr{color:var(--muted)}
+
+  .f{
+    color:var(--parchment);
+    background:rgba(110,156,196,.10);
+    border-bottom:1px dashed rgba(110,156,196,.55);
+    padding:1px 3px;border-radius:2px;cursor:pointer;
+  }
+  .f:hover{background:rgba(110,156,196,.24)}
+  .f:focus-visible{outline:2px solid var(--steel);outline-offset:1px}
+  .f.active{background:rgba(110,156,196,.30);border-bottom-color:var(--steel)}
+  .f.broken{
+    background:rgba(194,65,58,.20);
+    border-bottom:1px solid var(--seal);
+    color:#F0BDBA;
+  }
+
+  .b64{
+    font-family:var(--mono);font-size:11.5px;color:var(--muted);
+    word-break:break-all;line-height:1.7;max-height:150px;overflow:hidden;
+    position:relative;
+  }
+  .b64:after{
+    content:"";position:absolute;inset:auto 0 0 0;height:52px;
+    background:linear-gradient(transparent,var(--panel));
+  }
+
+  button.action{
+    background:transparent;border:1px solid var(--steel);color:var(--steel);
+    font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    padding:7px 13px;border-radius:3px;cursor:pointer;
+  }
+  button.action:hover{background:rgba(110,156,196,.14)}
+  button.action:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+  button.action.danger{border-color:var(--seal);color:#E08A85}
+  button.action.danger:hover{background:rgba(194,65,58,.14)}
+  button.action[disabled]{opacity:.35;cursor:not-allowed}
+
+  .panel-empty{color:var(--muted);font-size:13.5px;padding:8px 0 4px}
+
+  .field-name{
+    font-family:var(--mono);font-size:15px;color:var(--parchment);
+    margin:0 0 2px;word-break:break-all;
+  }
+  .field-role{color:var(--muted);font-size:12.5px;margin:0 0 14px}
+
+  .block{border-top:1px solid var(--line);padding:13px 0 0;margin:13px 0 0}
+  .block h4{
+    font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    margin:0 0 6px;
+  }
+  .h-attack h4{color:var(--seal)}
+  .h-check h4{color:var(--verify)}
+  .h-field h4{color:var(--steel)}
+  .block p{margin:0;font-size:13.5px;color:#C9D2DD}
+  .block p + p{margin-top:8px}
+  code.inline{
+    font-family:var(--mono);font-size:12px;
+    background:var(--panel-2);border:1px solid var(--line);
+    padding:1px 5px;border-radius:2px;color:#C9D2DD;
+  }
+
+  .verdict{
+    margin-top:14px;border:1px solid var(--seal);border-radius:3px;
+    background:rgba(194,65,58,.09);padding:12px 14px;
+  }
+  .verdict .eyebrow{color:var(--seal)}
+  .verdict p{margin:6px 0 0;font-size:13px;color:#E6C9C7}
+
+  .stamp{
+    float:right;
+    font-family:var(--mono);font-size:10px;letter-spacing:.16em;
+    border:1px solid var(--seal);color:var(--seal);
+    padding:3px 8px;border-radius:2px;
+    transform:rotate(-3deg);
+  }
+
+  .cfg{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+  }
+  @media (max-width:980px){.cfg{grid-template-columns:1fr}}
+  .cfg .card{cursor:pointer}
+  .cfg .card:hover{border-color:var(--steel)}
+  .cfg .card.picked{border-color:var(--steel)}
+  .cfg .card.reveal-bad{border-color:var(--seal)}
+  .cfg .card.reveal-ok{border-color:var(--verify)}
+  .cfg pre{font-size:11.5px;line-height:1.8}
+  .cfg .result{
+    display:none;border-top:1px solid var(--line);padding:12px 16px;
+    font-size:13px;color:#C9D2DD;
+  }
+  .cfg .card.revealed .result{display:block}
+
+  .notes{
+    margin-top:24px;border:1px solid var(--line);border-left:2px solid var(--amber);
+    border-radius:3px;background:rgba(212,160,60,.05);padding:14px 16px;
+  }
+  .notes .eyebrow{color:var(--amber)}
+  .notes p{margin:8px 0 0;font-size:13.5px;color:#C9D2DD;max-width:90ch}
+  .hidden{display:none}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+
+
+  /* ---- sequence diagram ---- */
+  .seq-bar{display:flex;justify-content:space-between;align-items:center;gap:14px;
+    flex-wrap:wrap;margin:0 0 16px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  .seg-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    padding:9px 16px}
+  .seg-btn + .seg-btn{border-left:1px solid var(--line)}
+  .seg-btn[aria-pressed="true"]{background:var(--panel-2);color:var(--parchment);
+    box-shadow:inset 0 2px 0 var(--steel)}
+  .seg-btn:focus-visible{outline:2px solid var(--steel);outline-offset:-2px}
+  .seq-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start}
+  @media (max-width:1080px){.seq-grid{grid-template-columns:1fr}}
+  .seq-card{padding:8px 4px}
+  .seq-scroll{overflow-x:auto}
+  #seq{display:block;min-width:640px}
+  #seq text{font-family:var(--mono)}
+  #seq .ln-who{font-family:var(--sans);font-size:12.5px;font-weight:600;fill:var(--parchment)}
+  #seq .ln-what{font-size:9.5px;fill:var(--muted)}
+  #seq .msg-ep{font-size:9.5px;fill:#B9C4D2}
+  #seq .msg-back{font-size:8.5px;fill:var(--verify);letter-spacing:.08em}
+  #seq .msg-n{font-size:9px;fill:var(--muted);letter-spacing:.14em}
+  #seq .msg{transition:opacity .25s ease}
+  #seq .msg.cur .msg-ep{fill:var(--parchment)}
+  #seq .msg.cur line,#seq .msg.cur path{filter:drop-shadow(0 0 5px rgba(110,156,196,.55))}
+
+  /* ---- route lanes (legacy) ---- */
+  .lanes{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+    border:1px solid var(--line);border-radius:4px;background:var(--panel);
+    padding:0 0 18px;position:relative;
+  }
+  .lane-head{
+    padding:14px 16px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--panel);z-index:2;
+  }
+  .lane-head + .lane-head{border-left:1px solid var(--line)}
+  .lane-head .who{font-size:14px;font-weight:600}
+  .lane-head .what{color:var(--muted);font-size:12px;font-family:var(--mono)}
+  .hops{grid-column:1 / -1;position:relative;padding:18px 0 0}
+  .hops:before,.hops:after{
+    content:"";position:absolute;top:0;bottom:0;width:1px;background:var(--line);
+  }
+  .hops:before{left:33.333%}
+  .hops:after{left:66.666%}
+  .hop{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    margin:0 0 14px;position:relative;
+  }
+  .bar{
+    background:var(--panel-2);border:1px solid var(--line);
+    border-radius:3px;padding:9px 12px;margin:0 10px;position:relative;z-index:1;
+  }
+  .bar.back{border-color:var(--verify);background:rgba(78,154,143,.10)}
+  .bar.self{border-style:dashed}
+  .bar .n{
+    font-family:var(--mono);font-size:10px;color:var(--steel);letter-spacing:.14em;
+  }
+  .bar .ep{
+    font-family:var(--mono);font-size:11.5px;color:var(--parchment);
+    word-break:break-all;margin:3px 0 0;line-height:1.6;
+  }
+  .bar .carry{
+    font-size:11.5px;color:var(--muted);margin:5px 0 0;line-height:1.5;
+  }
+  .bar .carry b{color:#C9D2DD;font-weight:500}
+  .arrow{
+    font-family:var(--mono);font-size:11px;color:var(--steel);
+    letter-spacing:.1em;
+  }
+  .arrow.back{color:var(--verify)}
+  .route-note{
+    margin:20px 0 0;border:1px solid var(--line);border-left:2px solid var(--steel);
+    border-radius:3px;background:rgba(110,156,196,.05);padding:14px 16px;
+  }
+  .route-note .eyebrow{color:var(--steel)}
+  .route-note p{margin:8px 0 0;font-size:13.5px;color:#C9D2DD;max-width:90ch}
+  h3.sec{
+    font-size:15px;font-weight:600;margin:30px 0 12px;
+    display:flex;align-items:center;gap:12px;
+  }
+  h3.sec:after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* ---- accordion ---- */
+  .accord{margin:0}
+  .accord-item{border-bottom:1px solid var(--line)}
+  .accord-item:last-child{border-bottom:none}
+  .accord-head{
+    width:100%;background:none;border:none;color:var(--parchment);
+    font-family:var(--sans);font-size:14px;font-weight:600;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 16px;cursor:pointer;text-align:left;
+  }
+  .accord-head:hover{background:rgba(255,255,255,.03)}
+  .accord-head:focus-visible{outline:2px solid var(--steel);outline-offset:-2px}
+  .accord-head .chev{font-size:11px;color:var(--muted);transition:transform .2s ease;flex-shrink:0}
+  .accord-item.open .chev{transform:rotate(180deg)}
+  .accord-body{display:none;padding:0 16px 18px;font-size:13.5px;color:#C9D2DD;line-height:1.7}
+  .accord-item.open .accord-body{display:block}
+  .accord-body p{margin:0 0 10px}
+  .accord-body p:last-child{margin-bottom:0}
+
+  /* ---- concept comparison ---- */
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:720px){.cmp{grid-template-columns:1fr}}
+  .cmp-side{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:16px}
+  .cmp-side.a{border-top:2px solid var(--steel)}
+  .cmp-side.b{border-top:2px solid var(--amber)}
+  .cmp-label{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+  .cmp-title{font-size:18px;font-weight:700;margin:0 0 6px}
+  .cmp-side.a .cmp-title{color:var(--steel)}
+  .cmp-side.b .cmp-title{color:var(--amber)}
+  .cmp-body{font-size:13.5px;color:#C9D2DD;margin:0}
+  .cmp-ex{margin:12px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:10px 12px;font-size:12.5px;color:var(--muted)}
+  .cmp-ex b{color:var(--parchment)}
+
+  /* ---- flow steps ---- */
+  .flow{display:flex;flex-direction:column;gap:0}
+  .flow-step{display:flex;gap:14px;position:relative;padding:0 0 22px}
+  .flow-step:before{content:"";position:absolute;left:15px;top:32px;bottom:0;width:1px;background:var(--line)}
+  .flow-step:last-child:before{display:none}
+  .flow-step:last-child{padding-bottom:0}
+  .flow-num{
+    flex-shrink:0;width:32px;height:32px;border-radius:50%;
+    background:var(--panel-2);border:1px solid var(--steel);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:11px;color:var(--steel);position:relative;z-index:1;
+  }
+  .flow-num.green{border-color:var(--verify);color:var(--verify)}
+  .flow-num.amber{border-color:var(--amber);color:var(--amber)}
+  .flow-content{padding-top:5px}
+  .flow-content strong{font-size:13.5px;color:var(--parchment);display:block;margin:0 0 3px}
+  .flow-content p{margin:0;font-size:13px;color:#C9D2DD}
+
+  /* ---- grant picker ---- */
+  .grant-opts{display:flex;flex-direction:column;gap:8px;margin:0 0 20px}
+  .grant-opt{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:4px;
+    padding:12px 14px;cursor:pointer;font-size:13.5px;color:var(--parchment);
+    text-align:left;width:100%;
+  }
+  .grant-opt:hover{border-color:var(--steel)}
+  .grant-opt.picked{border-color:var(--steel);background:rgba(110,156,196,.12)}
+  .grant-result{display:none;border:1px solid var(--steel);border-radius:4px;background:rgba(110,156,196,.07);padding:14px 16px}
+  .grant-result.show{display:block}
+  .grant-result .eyebrow{color:var(--steel)}
+  .grant-result strong{color:var(--parchment);font-size:15px;display:block;margin:4px 0 8px}
+  .grant-result p{margin:8px 0 0;font-size:13.5px;color:#C9D2DD}
+
+  /* ---- pills ---- */
+  .pills{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
+  .pill{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;background:var(--panel-2);border:1px solid var(--line);border-radius:2px;padding:3px 8px;color:var(--muted)}
+  .pill.yes{border-color:var(--verify);color:var(--verify)}
+  .pill.no{border-color:var(--seal);color:#E08A85}
+  .pill.warn{border-color:var(--amber);color:var(--amber)}
+
+  /* ---- actor boxes (Kerberos etc) ---- */
+  .actors{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+  @media(max-width:720px){.actors{grid-template-columns:1fr}}
+  .actor-box{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:14px;text-align:center}
+  .actor-box .icon{font-size:24px;margin:0 0 6px;display:block}
+  .actor-box .who{font-weight:600;font-size:13px}
+  .actor-box .what{font-size:11.5px;color:var(--muted);margin:4px 0 0}
+
+  /* ---- wide grid for protocols ---- */
+  .proto-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+  @media(max-width:900px){.proto-grid{grid-template-columns:1fr}}
+
+  /* ---- privilege creep animator ---- */
+  .creep-stage{border:1px solid var(--line);border-radius:4px;background:var(--panel);overflow:hidden}
+  .creep-header{display:grid;grid-template-columns:140px repeat(5,1fr);border-bottom:2px solid var(--line)}
+  .creep-hcell{padding:9px 10px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border-left:1px solid var(--line);text-align:center}
+  .creep-hcell:first-child{border-left:none}
+  .creep-hcell.yr-active{color:var(--parchment);background:rgba(110,156,196,.10);border-bottom:2px solid var(--steel);margin-bottom:-2px}
+  .creep-body{display:grid;grid-template-columns:140px 1fr;min-height:220px}
+  .creep-roles{border-right:1px solid var(--line);padding:0}
+  .creep-role-row{padding:9px 12px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);transition:color .3s,background .3s}
+  .creep-role-row.active{color:var(--parchment);background:rgba(110,156,196,.08)}
+  .creep-role-row .yr{font-family:var(--mono);font-size:10px;color:var(--steel);display:block;margin-bottom:2px}
+  .creep-perm-area{padding:14px 16px}
+  .perm-badge{
+    display:inline-block;font-family:var(--mono);font-size:10.5px;
+    padding:4px 9px;border-radius:2px;margin:3px 4px 3px 0;
+    opacity:0;transform:translateY(6px);
+    transition:opacity .35s ease,transform .35s ease,border-color .5s ease,background .5s ease,color .5s ease;
+  }
+  .perm-badge.show{opacity:1;transform:translateY(0)}
+  .perm-badge.current{background:rgba(78,154,143,.15);border:1px solid var(--verify);color:var(--verify)}
+  .perm-badge.stale{background:rgba(212,160,60,.10);border:1px solid var(--amber);color:var(--amber)}
+  .perm-badge.danger{background:rgba(194,65,58,.15);border:1px solid var(--seal);color:#E08A85}
+  .creep-event{font-family:var(--mono);font-size:11px;color:var(--muted);margin:0 0 12px;min-height:16px;transition:color .3s}
+  .creep-event.attack{color:var(--seal)}
+  .creep-footer{border-top:1px solid var(--line);padding:12px 16px;display:flex;align-items:center;gap:10px}
+  .creep-legend{display:flex;gap:12px;margin-left:auto;flex-wrap:wrap}
+  .creep-legend span{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px}
+  .creep-legend span:before{content:"";width:8px;height:8px;border-radius:1px;display:inline-block}
+  .creep-legend .l-ok:before{background:rgba(78,154,143,.4);border:1px solid var(--verify)}
+  .creep-legend .l-stale:before{background:rgba(212,160,60,.3);border:1px solid var(--amber)}
+  .creep-legend .l-danger:before{background:rgba(194,65,58,.3);border:1px solid var(--seal)}
+
+  /* ---- pkce step animator ---- */
+  .pkce-wrap{overflow-x:auto}
+  .pkce-canvas{display:grid;grid-template-columns:1fr 56px 1fr;min-width:480px;gap:0}
+  .pkce-col{display:flex;flex-direction:column;gap:6px}
+  .pkce-actor{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:4px;
+    padding:10px;text-align:center;font-weight:600;font-size:13px;margin-bottom:4px;
+  }
+  .pkce-actor.idp{border-color:var(--steel)}
+  .pkce-box{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:3px;
+    padding:9px 11px;font-size:12.5px;color:#C9D2DD;line-height:1.55;
+    opacity:.25;transition:opacity .3s,border-color .3s,background .3s;
+  }
+  .pkce-box.lit{opacity:1}
+  .pkce-box.lit-blue{border-color:var(--steel);background:rgba(110,156,196,.08)}
+  .pkce-box.lit-green{border-color:var(--verify);background:rgba(78,154,143,.08)}
+  .pkce-box.lit-amber{border-color:var(--amber);background:rgba(212,160,60,.07)}
+  .pkce-box.lit-red{border-color:var(--seal);background:rgba(194,65,58,.07)}
+  .pkce-box .kv{font-family:var(--mono);font-size:10.5px;display:block;margin-top:5px;word-break:break-all}
+  .pkce-box .kv.blue{color:var(--steel)}
+  .pkce-box .kv.green{color:var(--verify)}
+  .pkce-box .kv.amber{color:var(--amber)}
+  .pkce-mid{display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding-top:58px;gap:4px}
+  .pkce-arr{font-size:20px;color:var(--line);transition:color .3s,transform .3s;line-height:1}
+  .pkce-arr.lit{color:var(--steel)}
+  .pkce-arr.lit-green{color:var(--verify)}
+  .pkce-arr.flip{transform:scaleX(-1)}
+  .pkce-narr{font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center;letter-spacing:.1em}
+  .pkce-step-label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);margin-bottom:3px;display:block}
+  .pkce-desc{font-size:13px;color:#C9D2DD;margin:10px 0 0;padding:10px 14px;background:rgba(110,156,196,.06);border:1px solid var(--line);border-radius:3px;min-height:52px;transition:opacity .25s}
+
+  /* ---- endpoint table ---- */
+  .ep-table{width:100%;border-collapse:collapse;font-size:13px}
+  .ep-table th{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line)}
+  .ep-table td{padding:9px 10px;border-bottom:1px solid var(--line);color:#C9D2DD;vertical-align:top}
+  .ep-table tr:last-child td{border-bottom:none}
+  .ep-table td:first-child{font-family:var(--mono);font-size:12px;color:var(--steel);white-space:nowrap}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Access Management &middot; Reverse KT</div>
+  <h1 class="title">Assertion Anatomy Lab</h1>
+  <p class="sub">Every field in a SAML assertion or an ID token is scar tissue. Something got broken once, and the field is the fix. Click a field to see what it stops. Break it to see what happens when nobody validates it.</p>
+  <nav role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="route">00 &nbsp;The Route</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="saml">01 &nbsp;SAML Response</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="oidc">02 &nbsp;OIDC ID Token</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="cfg">03 &nbsp;Spot the Misconfiguration</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="foundations">04 &nbsp;Foundations</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="protocols">05 &nbsp;Protocols</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="grants">06 &nbsp;OAuth Grants</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ============ ROUTE ============ -->
+<section id="tab-route">
+  <div class="seq-bar">
+    <div class="seg" role="group" aria-label="protocol">
+      <button class="seg-btn" data-proto="saml" aria-pressed="true">SAML 2.0 &middot; SP initiated</button>
+      <button class="seg-btn" data-proto="oidc" aria-pressed="false">OIDC &middot; Code + PKCE</button>
+      <button class="seg-btn" data-proto="kerb" aria-pressed="false">Kerberos &middot; TGT flow</button>
+    </div>
+    <div class="row">
+      <button class="action" id="seqPlay">Play</button>
+      <button class="action" id="seqStep">Step</button>
+      <button class="action" id="seqReset">Reset</button>
+    </div>
+  </div>
+
+  <div class="seq-grid">
+    <div class="card seq-card">
+      <div class="seq-scroll"><svg id="seq" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">On the wire</div></div>
+      <div class="card-body" id="seqPanel">
+        <p class="panel-empty">Press Play. Watch which lifeline every message has to touch.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="route-note" id="routeNote"></div>
+</section>
+
+<!-- ============ SAML ============ -->
+<section id="tab-saml" class="hidden">
+  <div class="card" id="b64card">
+    <div class="card-head">
+      <div>
+        <div class="eyebrow">Step 1 &middot; What the browser actually POSTs</div>
+      </div>
+      <button class="action" id="decodeBtn">Decode locally</button>
+    </div>
+    <div class="card-body">
+      <div class="b64" id="b64blob"></div>
+      <p style="color:var(--muted);font-size:12.5px;margin:12px 0 0">This decodes in this page, in this browser. Nothing leaves the machine. Pasting a live assertion into a public decoder site hands a signed credential to a stranger.</p>
+    </div>
+  </div>
+
+  <div class="grid hidden" id="samlGrid" style="margin-top:20px">
+    <div class="card">
+      <div class="card-head">
+        <div class="eyebrow">Step 2 &middot; Decoded response</div>
+        <div class="row">
+          <button class="action" id="resetSaml">Repair all</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <pre class="doc" id="samlDoc"></pre>
+      </div>
+    </div>
+
+    <div class="card" id="samlPanelCard">
+      <div class="card-head"><div class="eyebrow">Field inspector</div></div>
+      <div class="card-body" id="samlPanel">
+        <p class="panel-empty">Pick any highlighted field on the left.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="eyebrow">Say this out loud</div>
+    <p>SAML pushed its security into XML canonicalisation and signature scope. That is why nearly every serious SAML bug is not a crypto break, it is a parser disagreement: the code that verifies the signature and the code that reads the claims are looking at two different parts of the same document.</p>
+  </div>
+</section>
+
+<!-- ============ OIDC ============ -->
+<section id="tab-oidc" class="hidden">
+  <div class="grid">
+    <div class="card">
+      <div class="card-head">
+        <div class="eyebrow">ID Token &middot; decoded</div>
+        <button class="action" id="resetOidc">Repair all</button>
+      </div>
+      <div class="card-body">
+        <pre class="doc" id="oidcDoc"></pre>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">Claim inspector</div></div>
+      <div class="card-body" id="oidcPanel">
+        <p class="panel-empty">Pick any highlighted claim on the left.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="eyebrow">The punchline for the room</div>
+    <p>Put the two side by side and they are answering the same three questions: who issued this, who is it for, is it fresh. SAML answers them with <code class="inline">Issuer</code>, <code class="inline">Audience</code>, <code class="inline">Conditions</code>. OIDC answers them with <code class="inline">iss</code>, <code class="inline">aud</code>, <code class="inline">exp</code> plus <code class="inline">nonce</code>. The protocols are twenty years apart and the threat model barely moved. What moved is where the complexity lives: XML canonicalisation in one, token binding and key rotation in the other.</p>
+  </div>
+</section>
+
+<!-- ============ CONFIG ============ -->
+<section id="tab-cfg" class="hidden">
+  <p class="sub" style="margin:0 0 16px">Three SP connections. One of them lets an attacker sign in as anyone. Two minutes, no hints. Then click a card.</p>
+  <div class="cfg" id="cfgGrid"></div>
+  <div class="notes">
+    <div class="eyebrow">Why this one lands</div>
+    <p>Every option here looks fine on the surface and would pass a checklist review. The failure is in the interaction between two settings that are configured on different screens by different people. That is what a real misconfiguration looks like, and it is the argument for reviewing connections as a whole rather than field by field.</p>
+  </div>
+</section>
+
+<!-- ============ FOUNDATIONS ============ -->
+<section id="tab-foundations" class="hidden">
+
+  <h3 class="sec">Authentication vs. Authorization</h3>
+  <div class="cmp" style="margin-bottom:24px">
+    <div class="cmp-side a">
+      <div class="cmp-label">Authentication &middot; AuthN</div>
+      <div class="cmp-title">Prove who you are</div>
+      <p class="cmp-body">The system challenges you to demonstrate an identity claim. You respond with a factor — something you know, have, or are. If the answer matches, the system now has a verified principal.</p>
+      <div class="cmp-ex"><b>Hotel analogy:</b> showing your passport at check-in. The clerk decides your claim "I am Alice Smith" is credible.</div>
+    </div>
+    <div class="cmp-side b">
+      <div class="cmp-label">Authorization &middot; AuthZ</div>
+      <div class="cmp-title">Decide what you can do</div>
+      <p class="cmp-body">After identity is established, policy decides which resources the principal may access and what operations they may perform. Two users can authenticate to the same system and get completely different capabilities.</p>
+      <div class="cmp-ex"><b>Hotel analogy:</b> the key card the clerk hands you. It opens your room and the gym, not the kitchen or the penthouse.</div>
+    </div>
+  </div>
+  <div class="notes">
+    <div class="eyebrow">Why it matters</div>
+    <p>Confusing the two is how bugs happen. A system that authenticates every request but applies no authorization is a locked front door with no interior walls. Conversely, rich authorization policies are useless if the identity claims feeding them can be spoofed. They are different layers, with different owners, different failure modes, and different audit trails.</p>
+  </div>
+
+  <h3 class="sec" style="margin-top:32px">Privileged Access Management &middot; PAM</h3>
+  <div class="proto-grid">
+    <div class="card">
+      <div class="accord" id="pamAccord">
+        <div class="accord-item">
+          <button class="accord-head" aria-expanded="false">What PAM is
+            <span class="chev">&#9660;</span></button>
+          <div class="accord-body">
+            <p>PAM is the set of controls around accounts that can break things: root, Domain Admin, service accounts, shared credentials for network devices. These accounts are both the highest value and the least protected targets in most environments.</p>
+            <p>A PAM solution typically vaults passwords, enforces session recording, and brokers access so the human never sees the credential at all — they request access, get a time-limited session, and the password rotates when the session closes.</p>
+          </div>
+        </div>
+        <div class="accord-item">
+          <button class="accord-head" aria-expanded="false">Standing vs. just-in-time access
+            <span class="chev">&#9660;</span></button>
+          <div class="accord-body">
+            <p><strong style="color:var(--seal)">Standing access</strong> means the account exists and has permissions permanently, even between uses. An admin account sitting idle for eleven months still has Domain Admin rights. When it gets compromised, the attacker inherits eleven months of unchecked privilege instantly.</p>
+            <p><strong style="color:var(--verify)">Just-in-time (JIT) access</strong> means the account is created or elevated only for the duration of an approved task. The privilege disappears when the window closes. This shrinks the blast radius of credential theft to the length of a single session.</p>
+          </div>
+        </div>
+        <div class="accord-item">
+          <button class="accord-head" aria-expanded="false">Session recording and audit trails
+            <span class="chev">&#9660;</span></button>
+          <div class="accord-body">
+            <p>When humans cannot see the password, session recording becomes the audit layer. Every keystroke, every command, every file accessed in a privileged session is captured and tied to the identity of the person who checked out the session — not to the shared account they used.</p>
+            <p>This is what lets a forensics team reconstruct exactly what a compromised account did, and what lets HR conversations happen with evidence rather than conjecture.</p>
+          </div>
+        </div>
+        <div class="accord-item">
+          <button class="accord-head" aria-expanded="false">Service accounts and the rotation problem
+            <span class="chev">&#9660;</span></button>
+          <div class="accord-body">
+            <p>Service accounts are the forgotten corner of PAM. They often have high privileges, rarely rotate passwords because the teams wired them into eight different systems without documenting where, and never hit MFA because they are non-interactive.</p>
+            <p>Modern mitigation: managed identities (workload identity), short-lived tokens from a secrets manager, or certificate-based authentication rather than passwords. If a service account has a password that has never changed, that is the first question in any incident review.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">The PAM request flow</div></div>
+      <div class="card-body">
+        <div class="flow">
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div class="flow-content">
+              <strong>Request</strong>
+              <p>Engineer submits a request for privileged access — specific system, specific time window, business justification. Human or policy approval gate.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div class="flow-content">
+              <strong>Checkout</strong>
+              <p>PAM vault issues a session token or a rotated credential. The engineer never sees the underlying password. The checkout is logged with their identity.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num green">3</div>
+            <div class="flow-content">
+              <strong>Session (recorded)</strong>
+              <p>All activity in the privileged session is captured. The session is time-boxed. An alert fires if the window is exceeded.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">4</div>
+            <div class="flow-content">
+              <strong>Rotation</strong>
+              <p>On session close the credential rotates automatically. The leaked credential from this session is immediately invalid.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sec" style="margin-top:32px">Privilege Creep &middot; Watch it happen</h3>
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-head">
+      <div class="eyebrow">Five-year career simulation &middot; click Step to advance</div>
+      <div class="row">
+        <button class="action" id="creepStep">Step &rarr;</button>
+        <button class="action" id="creepReset">Reset</button>
+      </div>
+    </div>
+    <div class="creep-stage">
+      <div class="creep-header" id="creepHeader"></div>
+      <div class="creep-body">
+        <div class="creep-roles" id="creepRoles"></div>
+        <div class="creep-perm-area">
+          <div class="creep-event" id="creepEvent">&mdash;</div>
+          <div id="creepPerms"></div>
+        </div>
+      </div>
+      <div class="creep-footer">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--muted)" id="creepCount">0 permissions</span>
+        <div class="creep-legend">
+          <span class="l-ok">active role</span>
+          <span class="l-stale">from old role — not revoked</span>
+          <span class="l-danger">dangerous accumulation</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sec" style="margin-top:32px">Identity Governance and Administration &middot; IGA</h3>
+  <div class="proto-grid">
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">The joiner-mover-leaver lifecycle</div></div>
+      <div class="card-body">
+        <div class="flow">
+          <div class="flow-step">
+            <div class="flow-num">J</div>
+            <div class="flow-content">
+              <strong>Joiner</strong>
+              <p>New employee. IGA provisions accounts, assigns role-based entitlements from an approved template, and sends access confirmations. SCIM carries the provisioning instruction to each downstream system.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num amber">M</div>
+            <div class="flow-content">
+              <strong>Mover</strong>
+              <p>Employee changes role or team. IGA should remove old entitlements and add new ones. In practice this is where privilege creep begins — the old access is often never removed.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num" style="border-color:var(--seal);color:#E08A85">L</div>
+            <div class="flow-content">
+              <strong>Leaver</strong>
+              <p>Employee exits. IGA must disable or delete accounts across all systems within a defined SLA — usually same-day. An account that stays active after offboarding is a standing vulnerability.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">Access reviews and recertification</div></div>
+      <div class="card-body">
+        <div class="accord" id="igaAccord">
+          <div class="accord-item">
+            <button class="accord-head" aria-expanded="false">What a recertification campaign is
+              <span class="chev">&#9660;</span></button>
+            <div class="accord-body">
+              <p>A periodic (quarterly, annual) process in which managers review and confirm or revoke their team members' entitlements. The goal is to catch access that accumulated without a corresponding business need, and to demonstrate to auditors that someone with accountability signed off on what exists.</p>
+            </div>
+          </div>
+          <div class="accord-item">
+            <button class="accord-head" aria-expanded="false">Privilege creep
+              <span class="chev">&#9660;</span></button>
+            <div class="accord-body">
+              <p>Over time, movers accumulate entitlements from every role they have ever held. Nobody removes old access because it is not actively causing harm, and the mover needs it briefly during transitions. After five years, a treasury analyst who spent six months in IT helpdesk still has local admin on every laptop they ever touched.</p>
+              <p>This is the most common finding in access audits and the least dramatic-looking vulnerability, right up until a breach uses it to pivot laterally across eight systems with one set of credentials.</p>
+            </div>
+          </div>
+          <div class="accord-item">
+            <button class="accord-head" aria-expanded="false">Least privilege principle
+              <span class="chev">&#9660;</span></button>
+            <div class="accord-body">
+              <p>Every principal — user, service, or process — should hold only the minimum permissions required to do its job, for only as long as it is doing that job.</p>
+              <p>In practice this means: deny by default, grant explicitly, scope tightly, expire aggressively. The principle is easy to state and expensive to maintain because it conflicts with "just give them access so we can ship."</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sec" style="margin-top:32px">Cookies in Browser Auth</h3>
+  <div class="card">
+    <div class="card-head"><div class="eyebrow">What a session cookie is doing</div></div>
+    <div class="card-body" style="font-size:13.5px;color:#C9D2DD;line-height:1.7">
+      <p>Both the SAML and OIDC flows in tab 00 end the same way: the SP/RP mints a session cookie and hands it to the browser. Every subsequent request the browser makes to that domain carries the cookie automatically — that is the HTTP mechanism that turns a one-time authentication event into a sustained session.</p>
+      <p>The attributes on that cookie decide its security posture:
+        <div class="pills" style="margin-top:8px">
+          <span class="pill yes">HttpOnly &mdash; JS cannot read it</span>
+          <span class="pill yes">Secure &mdash; only sent over TLS</span>
+          <span class="pill yes">SameSite=Strict/Lax &mdash; CSRF protection</span>
+          <span class="pill warn">SameSite=None &mdash; required for cross-origin but needs Secure</span>
+          <span class="pill no">missing HttpOnly &mdash; XSS can steal it</span>
+          <span class="pill no">missing Secure &mdash; exposed over HTTP</span>
+        </div>
+      </p>
+      <p style="margin-top:12px">The SAML assertion and the OIDC tokens are not the session. They are the mechanism that earns the right to create a session. Once the cookie exists, the tokens are useless and should be discarded. Keeping them in browser storage after the session is established is a mistake with no upside.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============ PROTOCOLS ============ -->
+<section id="tab-protocols" class="hidden">
+
+  <h3 class="sec">Kerberos</h3>
+  <div class="proto-grid">
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">The three actors</div></div>
+      <div class="card-body">
+        <div class="actors">
+          <div class="actor-box">
+            <span class="icon">&#128100;</span>
+            <div class="who">Client</div>
+            <div class="what">The workstation or service requesting access. Knows its own long-term key (derived from the user's password).</div>
+          </div>
+          <div class="actor-box" style="border-color:var(--steel)">
+            <span class="icon">&#128273;</span>
+            <div class="who">KDC (Key Distribution Center)</div>
+            <div class="what">Combines the Authentication Server (AS) and the Ticket Granting Server (TGS). Knows the keys of every principal.</div>
+          </div>
+          <div class="actor-box">
+            <span class="icon">&#128196;</span>
+            <div class="who">Service</div>
+            <div class="what">The resource being accessed. Validates the service ticket but never contacts the KDC during authentication.</div>
+          </div>
+        </div>
+        <div class="flow" style="margin-top:16px">
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div class="flow-content">
+              <strong>AS-REQ &rarr; KDC</strong>
+              <p>Client asks the Authentication Server for a Ticket Granting Ticket (TGT). Proves it knows its key without transmitting it.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div class="flow-content">
+              <strong>AS-REP &larr; KDC</strong>
+              <p>KDC returns the TGT (encrypted with the KDC's own key, unreadable to the client) plus a session key encrypted with the client's key.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">3</div>
+            <div class="flow-content">
+              <strong>TGS-REQ &rarr; KDC</strong>
+              <p>Client presents the TGT to the Ticket Granting Server and requests a service ticket for a specific target service.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">4</div>
+            <div class="flow-content">
+              <strong>TGS-REP &larr; KDC</strong>
+              <p>KDC issues a service ticket (encrypted with the service's key) and a new session key for the client-service conversation.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num green">5</div>
+            <div class="flow-content">
+              <strong>AP-REQ &rarr; Service</strong>
+              <p>Client presents the service ticket. The service decrypts it with its own key, verifies the authenticator, and the session begins. The KDC is never contacted again.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">Why Kerberos matters today</div></div>
+      <div class="card-body">
+        <div class="accord" id="kerbAccord">
+          <div class="accord-item">
+            <button class="accord-head" aria-expanded="false">It is the default in every Windows domain
+              <span class="chev">&#9660;</span></button>
+            <div class="accord-body">
+              <p>Every time you log into a Windows machine joined to Active Directory, Kerberos handles the authentication. Every file share, every printer, every SQL Server connection is using service tickets. It is the infrastructure underneath most enterprise environments, even ones that have added SAML and OIDC on top.</p>
+            </div>
+          </div>
+          <div class="accord-item">
+            <button class="accord-head" aria-expanded="false">Pass-the-Ticket and Golden Ticket attacks
+              <span class="chev">&#9660;</span></button>
+            <div class="accord-body">
+              <p><strong style="color:var(--seal)">Pass-the-Ticket:</strong> steal a valid TGT or service ticket from memory (e.g., with Mimikatz) and replay it from a different machine. The KDC cannot tell the difference.</p>
+              <p><strong style="color:var(--seal)">Golden Ticket:</strong> compromise the KRBTGT account key and forge TGTs for any principal, with any group membership, with any expiry. The only mitigation is rotating the KRBTGT key twice (to invalidate cached tickets), which disrupts the domain.</p>
+            </div>
+          </div>
+          <div class="accord-item">
+            <button class="accord-head" aria-expanded="false">Kerberoasting
+              <span class="chev">&#9660;</span></button>
+            <div class="accord-body">
+              <p>Any authenticated domain user can request a service ticket for any service account with an SPN (Service Principal Name). The ticket is encrypted with the service account's password hash. Take the ticket offline and crack the hash at leisure. Service accounts with weak passwords are fully exposed to every domain user.</p>
+              <p>Mitigation: long random passwords on service accounts, managed service accounts (gMSA), and monitoring for unusual TGS-REQ patterns.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sec" style="margin-top:32px">SCIM &middot; System for Cross-domain Identity Management</h3>
+  <div class="proto-grid">
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">What SCIM automates</div></div>
+      <div class="card-body" style="font-size:13.5px;color:#C9D2DD;line-height:1.7">
+        <p>Before SCIM, provisioning a new employee meant logging into each SaaS application and manually creating an account. Fifteen apps meant fifteen manual steps, plus fifteen more on offboarding — except offboarding usually got skipped because it was painful.</p>
+        <p>SCIM (RFC 7643/7644) is a REST API standard that lets an identity provider push account lifecycle events to any compliant system. The IdP sends an HTTP POST to create a user, a PATCH to update attributes or group membership, and a DELETE to remove them. The downstream system handles the rest.</p>
+        <div class="pills" style="margin-top:12px">
+          <span class="pill yes">POST /Users &mdash; create account</span>
+          <span class="pill yes">PATCH /Users/{id} &mdash; update attributes</span>
+          <span class="pill warn">PUT /Users/{id} &mdash; full replacement</span>
+          <span class="pill no">DELETE /Users/{id} &mdash; deprovision</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">SCIM vs. SSO</div></div>
+      <div class="card-body" style="font-size:13.5px;color:#C9D2DD;line-height:1.7">
+        <p>These solve different problems and are often deployed together. SSO (via SAML or OIDC) handles the moment of authentication — it logs a user in without a password. SCIM handles account existence — it creates, updates, and removes the account so there is something to log into.</p>
+        <p>Without SCIM you can have SSO: user authenticates at the IdP, the SP receives an assertion for an account it has never seen, and depending on the SP either JIT provisions a bare-bones account or rejects the login entirely. SCIM makes the account exist before the user first logs in, with correct attributes and group memberships already in place.</p>
+        <p>Without SSO you can have SCIM: accounts exist everywhere but each app has its own login page. The combination of both is the baseline for modern enterprise identity.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sec" style="margin-top:32px">RADIUS &middot; Remote Authentication Dial-In User Service</h3>
+  <div class="proto-grid">
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">The AAA model</div></div>
+      <div class="card-body">
+        <div class="flow">
+          <div class="flow-step">
+            <div class="flow-num">A</div>
+            <div class="flow-content">
+              <strong>Authentication</strong>
+              <p>Who is this? User presents credentials to the NAS (Network Access Server — a VPN gateway, Wi-Fi controller, switch). NAS forwards them to the RADIUS server.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">A</div>
+            <div class="flow-content">
+              <strong>Authorization</strong>
+              <p>What can they do? RADIUS Access-Accept response carries attributes: VLAN assignment, IP pool, session limits, permitted services. The NAS enforces whatever the RADIUS server sends back.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num green">A</div>
+            <div class="flow-content">
+              <strong>Accounting</strong>
+              <p>What did they do? Start/stop records logged by the RADIUS server: bytes transferred, session duration, device MAC. The audit trail for network access.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">Where RADIUS lives</div></div>
+      <div class="card-body">
+        <div class="accord" id="radiusAccord">
+          <div class="accord-item">
+            <button class="accord-head" aria-expanded="false">802.1X and network access control
+              <span class="chev">&#9660;</span></button>
+            <div class="accord-body">
+              <p>When an endpoint plugs into a managed switch or connects to corporate Wi-Fi, 802.1X requires it to authenticate before the port is opened. The switch acts as the NAS, the endpoint runs a supplicant, and RADIUS is the back-end decision engine. An unauthenticated device stays in a quarantine VLAN with no access to internal resources.</p>
+            </div>
+          </div>
+          <div class="accord-item">
+            <button class="accord-head" aria-expanded="false">RADIUS vs. modern alternatives
+              <span class="chev">&#9660;</span></button>
+            <div class="accord-body">
+              <p>RADIUS is a 1991 protocol that uses UDP, a shared secret between NAS and server, and MD5-based message authentication — not impressive by modern standards. TACACS+ is a Cisco alternative that separates the three A functions and uses TCP with full packet encryption.</p>
+              <p>RADIUS is not going away because network infrastructure has extremely long replacement cycles and almost every managed switch, VPN appliance, and wireless controller speaks it natively. Understanding RADIUS means understanding why every enterprise network access policy still routes through it.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sec" style="margin-top:32px">OIDC Endpoints</h3>
+  <div class="card">
+    <div class="card-head"><div class="eyebrow">What lives at each endpoint — Microsoft Entra ID / PingFederate</div></div>
+    <div class="card-body" style="padding:0">
+      <table class="ep-table">
+        <thead>
+          <tr>
+            <th>Endpoint</th>
+            <th>Who calls it</th>
+            <th>What it returns / does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>/.well-known/openid-configuration</td>
+            <td>Client at startup</td>
+            <td>Discovery document. JSON blob listing all other endpoints, supported scopes, algorithms, and JWKS URI. Never hardcode endpoints — fetch discovery once and cache it.</td>
+          </tr>
+          <tr>
+            <td>/authorize</td>
+            <td>Browser (user-agent)</td>
+            <td>The authorization endpoint. User authenticates here, Conditional Access / MFA applies, session is evaluated. Returns an authorization code to the redirect URI.</td>
+          </tr>
+          <tr>
+            <td>/token</td>
+            <td>Backend server (back channel)</td>
+            <td>Exchanges a code (+ code_verifier for PKCE) for tokens. Returns id_token, access_token, and optionally refresh_token as JSON. The browser never touches this endpoint.</td>
+          </tr>
+          <tr>
+            <td>/introspect</td>
+            <td>Resource server (API)</td>
+            <td>Lets a resource server validate an opaque access token it received without having to decode a JWT. Returns active: true/false plus claims. Requires client auth. Add rate limiting — an attacker can probe validity of stolen tokens.</td>
+          </tr>
+          <tr>
+            <td>/jwks</td>
+            <td>Client verifying a JWT</td>
+            <td>JSON Web Key Set. The public keys the IdP uses to sign JWTs. Clients fetch this (keyed by kid), cache aggressively, and only refetch on unknown kid. Never disable caching — JWKS fetching is a DoS vector.</td>
+          </tr>
+          <tr>
+            <td>/logout / end_session</td>
+            <td>Browser (RP-initiated)</td>
+            <td>Clears the IdP session and optionally propagates logout to all RPs via back-channel logout or front-channel iframes. The RP must also clear its own session cookie independently.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="notes" style="margin-top:20px">
+    <div class="eyebrow">PingFederate vs. Microsoft Entra ID</div>
+    <p>Both implement OIDC and SAML and act as identity providers. <strong style="color:var(--parchment)">PingFederate</strong> is an on-premises (or cloud-hosted) federation server that organizations deploy and manage themselves — it is the integration layer when you need to bridge legacy enterprise directories, RADIUS, LDAP, and modern apps. <strong style="color:var(--parchment)">Microsoft Entra ID</strong> (formerly Azure AD) is a cloud-native IdP where the infrastructure is Microsoft's problem. The OIDC endpoints above exist on both. The operational difference is who owns the certificate rotation, the uptime, and the Conditional Access policy engine.</p>
+  </div>
+
+</section>
+
+<!-- ============ OAUTH GRANTS ============ -->
+<section id="tab-grants" class="hidden">
+
+  <h3 class="sec">OAuth 2.0 Roles</h3>
+  <div class="cmp" style="margin-bottom:8px">
+    <div class="cmp-side a" style="border-top-color:var(--muted)">
+      <div class="cmp-label">Resource Owner</div>
+      <div class="cmp-title" style="font-size:14px;color:var(--parchment)">The user</div>
+      <p class="cmp-body">Owns the data being accessed. Grants permission to the client to act on their behalf. The resource owner is not always present — client credentials flows have no resource owner at all.</p>
+    </div>
+    <div class="cmp-side b" style="border-top-color:var(--muted)">
+      <div class="cmp-label">Client</div>
+      <div class="cmp-title" style="font-size:14px;color:var(--parchment)">The application</div>
+      <p class="cmp-body">Requests access on behalf of the resource owner. Can be a browser app (public client, no secret) or a server-side app (confidential client, has a secret).</p>
+    </div>
+  </div>
+  <div class="cmp" style="margin-bottom:24px">
+    <div class="cmp-side a" style="border-top-color:var(--muted)">
+      <div class="cmp-label">Authorization Server</div>
+      <div class="cmp-title" style="font-size:14px;color:var(--parchment)">The IdP</div>
+      <p class="cmp-body">Authenticates the resource owner, gets consent, and issues tokens. Exposes the /authorize and /token endpoints. In OIDC this is also called the OpenID Provider (OP).</p>
+    </div>
+    <div class="cmp-side b" style="border-top-color:var(--muted)">
+      <div class="cmp-label">Resource Server</div>
+      <div class="cmp-title" style="font-size:14px;color:var(--parchment)">The API</div>
+      <p class="cmp-body">Hosts the protected resources. Validates the access token on every request. The access token tells it who the caller is and what they are allowed to do.</p>
+    </div>
+  </div>
+
+  <h3 class="sec">Choose the right grant type</h3>
+  <div class="proto-grid">
+    <div>
+      <p class="sub" style="margin:0 0 16px">Pick your scenario.</p>
+      <div class="grant-opts" id="grantOpts">
+        <button class="grant-opt" data-grant="pkce">I am building a single-page app or mobile app with a user who can log in</button>
+        <button class="grant-opt" data-grant="cc">I have a backend service or daemon that calls another API with no user involved</button>
+        <button class="grant-opt" data-grant="device">My app runs on a device with no browser — a TV, a CLI tool, a headless IoT device</button>
+        <button class="grant-opt" data-grant="refresh">My user's access token expired. I want to get a new one without making them log in again</button>
+      </div>
+      <div class="grant-result" id="grantResult">
+        <div class="eyebrow">Recommended grant</div>
+        <strong id="grantName"></strong>
+        <p id="grantDesc"></p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">Why the implicit grant is dead</div></div>
+      <div class="card-body" style="font-size:13.5px;color:#C9D2DD;line-height:1.7">
+        <p>The original OAuth spec included an implicit grant for browser apps that could not keep secrets. The authorization server returned the access token directly in the redirect URL fragment. It worked. It also put a live token in the browser history, in referrer headers, and in any server log that captured the redirect URL.</p>
+        <p>The authorization code flow with PKCE solves this without needing a client secret. PKCE is the reason the implicit grant is deprecated and should not appear in new code. If you see it in a codebase today, it is a migration todo.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sec" style="margin-top:32px">Authorization Code + PKCE</h3>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-head">
+      <div class="eyebrow">PKCE binding &middot; animated step-through</div>
+      <div class="row">
+        <button class="action" id="pkceStep">Step &rarr;</button>
+        <button class="action" id="pkceReset">Reset</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="pkce-wrap">
+        <div class="pkce-canvas" id="pkceCanvas">
+          <div class="pkce-col" id="pkceLeft">
+            <div class="pkce-actor">Client (Browser / App)</div>
+          </div>
+          <div class="pkce-mid" id="pkceMid"></div>
+          <div class="pkce-col" id="pkceRight">
+            <div class="pkce-actor idp">Authorization Server (IdP)</div>
+          </div>
+        </div>
+      </div>
+      <div class="pkce-desc" id="pkceDesc">Press Step to walk through how PKCE binds the authorization code to the original requester.</div>
+    </div>
+  </div>
+
+  <div class="proto-grid">
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">PKCE deep dive &middot; code verifier and code challenge</div></div>
+      <div class="card-body">
+        <div class="flow">
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div class="flow-content">
+              <strong>Generate code_verifier</strong>
+              <p>The client generates a cryptographically random 43–128 character string. This never leaves the client. Store it in the session.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div class="flow-content">
+              <strong>Derive code_challenge</strong>
+              <p><code class="inline">code_challenge = BASE64URL(SHA256(code_verifier))</code> — method S256. The challenge is the only thing the authorization server sees at this point.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">3</div>
+            <div class="flow-content">
+              <strong>Authorization request</strong>
+              <p>Client redirects the browser to /authorize with <code class="inline">code_challenge</code> and <code class="inline">code_challenge_method=S256</code>. User authenticates. Server stores the challenge against the code it is about to issue.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">4</div>
+            <div class="flow-content">
+              <strong>Authorization code arrives</strong>
+              <p>Browser receives a short-lived, single-use code at the redirect URI. The code is useless alone. An attacker who intercepts it cannot use it without the verifier.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num green">5</div>
+            <div class="flow-content">
+              <strong>Token exchange (back channel)</strong>
+              <p>Server POSTs the code <em>and</em> the <code class="inline">code_verifier</code> to /token. The IdP recomputes SHA256(verifier) and compares it to the stored challenge. Match = tokens issued. No match = rejected. The verifier is the proof of origin.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="eyebrow">State vs. Nonce — the confusion that never ends</div></div>
+      <div class="card-body" style="font-size:13.5px;color:#C9D2DD;line-height:1.7">
+        <p><strong style="color:var(--parchment)">state</strong> is an opaque value the client sends in the authorization request and receives back at the redirect. Its job is CSRF protection on the redirect: it proves the callback came from the authorization server that answered your specific request, not from an attacker who crafted a redirect.</p>
+        <p><strong style="color:var(--parchment)">nonce</strong> is embedded in the ID token itself (by the authorization server) and checked by the client after the token arrives. Its job is replay protection on the token: it proves the token was issued in response to your specific authentication request, not replayed from an earlier one.</p>
+        <p>They operate at different layers. State protects the redirect. Nonce protects the token. You need both, and having one does not give you the other.</p>
+        <div class="pills" style="margin-top:10px">
+          <span class="pill">state &rarr; on the redirect URI</span>
+          <span class="pill">nonce &rarr; inside the id_token</span>
+          <span class="pill yes">both are checked by the client</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sec" style="margin-top:32px">Other grant types</h3>
+  <div class="card">
+    <div class="accord" id="grantsAccord">
+      <div class="accord-item">
+        <button class="accord-head" aria-expanded="false">Client Credentials Grant &middot; service-to-service
+          <span class="chev">&#9660;</span></button>
+        <div class="accord-body">
+          <p>No user. The client authenticates as itself — with a client_id and client_secret, or with a certificate — and receives an access token scoped to its own permissions. Used for microservices, cron jobs, and any backend process that needs to call a protected API without a user in the loop.</p>
+          <p>The critical security difference: these tokens represent a service identity, not a user. Compromise of the client secret is the equivalent of credential theft. Rotate secrets, use short-lived certificates where possible, and scope to the minimum required permissions. This is the grant type most commonly used in systems that "didn't think they needed OAuth" until they needed to call a protected API.</p>
+          <div class="pills"><span class="pill no">no user involvement</span><span class="pill yes">confidential client only</span><span class="pill">no refresh token issued</span></div>
+        </div>
+      </div>
+      <div class="accord-item">
+        <button class="accord-head" aria-expanded="false">Device Authorization Grant &middot; TV, CLI, headless devices
+          <span class="chev">&#9660;</span></button>
+        <div class="accord-body">
+          <p>The device cannot open a browser. It calls /device_authorization and receives a device_code, a user_code, and a verification_uri. It displays the user_code and URI to the human (e.g., on a TV screen). The human goes to that URI on a phone or laptop, enters the code, and authenticates. The device polls /token until the authorization server confirms the human completed the flow, then receives tokens.</p>
+          <p>The security property: the browser-based authentication still happens on a real browser, on a device the user controls. The low-capability device only ever sees the token, never the credentials. The user_code expires quickly; polling has a rate limit enforced by slow_down responses.</p>
+          <div class="pills"><span class="pill yes">user authenticates on a separate device</span><span class="pill warn">polling required</span><span class="pill">device_code is short-lived</span></div>
+        </div>
+      </div>
+      <div class="accord-item">
+        <button class="accord-head" aria-expanded="false">Refresh Token Grant &middot; silent renewal
+          <span class="chev">&#9660;</span></button>
+        <div class="accord-body">
+          <p>Access tokens are short-lived by design — typically one hour. When one expires, the client can use a refresh token (obtained alongside the original access token) to get a new access token without user interaction. The refresh token is long-lived and must be stored securely.</p>
+          <p>Most IdPs implement refresh token rotation: each use of the refresh token returns a new refresh token and invalidates the old one. A reuse of an already-used refresh token triggers a full token family revocation — a signal that the token was likely stolen, so every session using that lineage is killed. If a legitimate client loses its refresh token in a race condition and triggers this, the user just has to log in again. That is an acceptable trade-off.</p>
+          <div class="pills"><span class="pill yes">no re-authentication</span><span class="pill yes">rotation on use</span><span class="pill warn">store refresh tokens like passwords</span><span class="pill no">never in localStorage</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes" style="margin-top:24px">
+    <div class="eyebrow">JWT structure — what you are actually validating</div>
+    <p>A JWT is three base64url-encoded sections separated by dots: <code class="inline">header.payload.signature</code>. The header names the algorithm and key id. The payload carries the claims. The signature is the cryptographic proof that an entity with the private key produced exactly this header and payload. The claim that trips people: the signature proves integrity but not meaning. An attacker cannot modify a valid JWT and keep the signature valid — but they can present a valid JWT that was issued for a different audience, a different purpose, or issued minutes after the last actual user interaction. Signature valid ≠ safe to trust. The claim validation after the signature check is where the actual security lives.</p>
+  </div>
+
+</section>
+
+</main>
+
+<script>
+/* ---------- tabs ---------- */
+const tabs = document.querySelectorAll('.tab');
+tabs.forEach(t => t.addEventListener('click', () => {
+  tabs.forEach(x => x.setAttribute('aria-selected', String(x === t)));
+  ['route','saml','oidc','cfg','foundations','protocols','grants'].forEach(id =>
+    document.getElementById('tab-'+id).classList.toggle('hidden', id !== t.dataset.tab));
+}));
+
+/* ---------- accordion ---------- */
+document.addEventListener('click', e => {
+  const head = e.target.closest('.accord-head');
+  if(!head) return;
+  const item = head.closest('.accord-item');
+  const isOpen = item.classList.contains('open');
+  item.classList.toggle('open', !isOpen);
+  head.setAttribute('aria-expanded', String(!isOpen));
+});
+
+/* ---------- kerberos sequence data ---------- */
+const kerbHops = [
+  {n:'01', from:0, to:1, ep:'AS-REQ → KDC/Authentication Service',
+   carry:'Client asks the Authentication Server for a Ticket Granting Ticket (TGT). Sends a preauthentication timestamp encrypted with its own long-term key — derived from the user password, never transmitted. The KDC verifies by re-deriving the same key from its own password store.'},
+  {n:'02', from:1, to:0, ep:'AS-REP ← KDC',
+   carry:'Two items arrive. A TGT, encrypted with the KDC\'s own secret key — the client cannot read inside it. A session key, encrypted with the client\'s key, which the client can decrypt. The client holds the TGT like a sealed envelope: it knows it exists, it carries it, but it cannot inspect it.'},
+  {n:'03', from:0, to:1, ep:'TGS-REQ → KDC/Ticket Granting Service',
+   carry:'Client presents the TGT plus an Authenticator — a fresh timestamp encrypted with the session key from AS-REP — to the Ticket Granting Service. The KDC decrypts the TGT with its own key to find the session key, then verifies the Authenticator. This proves freshness and prevents replay. The client names the target service it wants.'},
+  {n:'04', from:1, to:0, ep:'TGS-REP ← KDC',
+   carry:'A service ticket encrypted with the target service\'s long-term key (only that service can decrypt it) plus a new client-service session key encrypted with the client\'s existing session key. The KDC is now done. It will not participate in the actual service connection.'},
+  {n:'05', from:0, to:2, ep:'AP-REQ → Service',
+   carry:'Client sends the service ticket and an Authenticator encrypted with the client-service session key. The service decrypts the ticket with its own key, extracts the session key from inside, and uses it to verify the Authenticator. Mutual authentication: if the client requested it, the service sends back an AP-REP signed with the same session key.'},
+  {n:'06', from:2, to:2, self:true, ep:'Session open — KDC was never contacted',
+   carry:'The service verified the client entirely from the ticket contents. No callback to the KDC, no network round trip. All trust was encoded into the tickets at issuance time. This is Kerberos\'s scalability property — and its revocation weakness. A ticket issued now stays valid until its embedded expiry, even if the account is disabled a minute later.'}
+];
+
+LANES.kerb = [
+  {who:'Client',  what:'workstation / user process'},
+  {who:'KDC',    what:'Key Distribution Center'},
+  {who:'Service', what:'file server · SQL · app'}
+];
+
+NOTES.kerb = {
+  h:'Watch who talks to the KDC — and who never does',
+  t:'Every message goes through the KDC up to hop 04. Then the client talks directly to the service, and the service validates the ticket on its own with no network call back to the KDC. The trust is embedded in the ticket at issuance time. This is the scalability property of Kerberos: the KDC does not become a bottleneck on every resource access. The security consequence is the mirror image: disabling an account in Active Directory does not invalidate existing tickets. A leaver with a 10-hour Kerberos ticket can still access services for up to 10 hours after their account is disabled. Offboarding with Kerberos requires both account disablement and awareness of ticket lifetime — which is why most enterprise policies set maximum ticket lifetime to 10 hours and max renewal to 7 days.'
+};
+
+/* ---------- privilege creep animator ---------- */
+const careerSteps = [
+  {
+    year:2020, role:'Support Analyst', event:'Hired as Support Analyst &mdash; baseline access granted.',
+    grants:[
+      {id:'supp-rd',  label:'SUPPORT:READ',   cls:'current', desc:'Support ticketing read'},
+      {id:'corp-vpn', label:'CORP:VPN',        cls:'current', desc:'Corporate VPN access'},
+      {id:'email',    label:'EMAIL:USER',      cls:'current', desc:'Email & calendar'}
+    ]
+  },
+  {
+    year:2021, role:'IT Helpdesk', event:'Moved to IT Helpdesk. Old access not revoked.',
+    grants:[
+      {id:'hd-admin', label:'HELPDESK:ADMIN',  cls:'current', desc:'Helpdesk ticketing admin'},
+      {id:'ad-admin', label:'AD:LOCAL-ADMIN',  cls:'current', desc:'Local admin on all managed laptops'}
+    ],
+    stale:['supp-rd']   // these badges turn stale
+  },
+  {
+    year:2022, role:'Treasury Analyst', event:'Promoted to Treasury. Helpdesk access not revoked.',
+    grants:[
+      {id:'treas-rd',  label:'TREASURY:READ',   cls:'current', desc:'Treasury dashboard'},
+      {id:'fin-rep',   label:'FINANCE:REPORTS', cls:'current', desc:'Financial reporting'}
+    ],
+    stale:['supp-rd','hd-admin','ad-admin']
+  },
+  {
+    year:2023, role:'Senior Treasury Analyst', event:'Senior promotion. All prior access still accumulating.',
+    grants:[
+      {id:'treas-wr',  label:'TREASURY:WRITE',  cls:'current', desc:'Transaction approvals'},
+      {id:'fin-exp',   label:'FINANCE:EXPORT',  cls:'current', desc:'Full financial data export'}
+    ],
+    stale:['supp-rd','hd-admin'],
+    danger:['ad-admin']  // now clearly dangerous
+  },
+  {
+    year:2024, role:'Senior Treasury Analyst', event:'&#9888; Attacker compromises account. They inherit everything.',
+    grants:[],
+    stale:['supp-rd','hd-admin'],
+    danger:['ad-admin','treas-wr','fin-exp'],
+    attack:true
+  }
+];
+
+let creepCursor = -1;
+const creepPermsEl = document.getElementById('creepPerms');
+const creepEventEl = document.getElementById('creepEvent');
+const creepCountEl = document.getElementById('creepCount');
+const creepHeaderEl = document.getElementById('creepHeader');
+const creepRolesEl = document.getElementById('creepRoles');
+const badges = {};   // id → element
+
+function buildCreepChrome(){
+  creepHeaderEl.innerHTML = '<div class="creep-hcell">Access log</div>' +
+    careerSteps.map((s,i) => `<div class="creep-hcell" data-ci="${i}">${s.year}</div>`).join('');
+  creepRolesEl.innerHTML = careerSteps.map((s,i) =>
+    `<div class="creep-role-row" data-ci="${i}"><span class="yr">${s.year}</span>${s.role}</div>`).join('');
+}
+
+function applyCreepState(ci){
+  // update year header highlight
+  creepHeaderEl.querySelectorAll('.creep-hcell[data-ci]').forEach(c =>
+    c.classList.toggle('yr-active', Number(c.dataset.ci) === ci));
+  creepRolesEl.querySelectorAll('.creep-role-row').forEach(r =>
+    r.classList.toggle('active', Number(r.dataset.ci) === ci));
+
+  const step = careerSteps[ci];
+  creepEventEl.innerHTML = step.event;
+  creepEventEl.classList.toggle('attack', !!step.attack);
+
+  // create new badges
+  step.grants.forEach(g => {
+    if(badges[g.id]) return;
+    const span = document.createElement('span');
+    span.className = `perm-badge ${g.cls}`;
+    span.id = 'badge-' + g.id;
+    span.title = g.desc;
+    span.textContent = g.label;
+    creepPermsEl.appendChild(span);
+    badges[g.id] = span;
+    requestAnimationFrame(() => requestAnimationFrame(() => span.classList.add('show')));
+  });
+
+  // reclassify stale
+  (step.stale || []).forEach(id => {
+    if(badges[id]){ badges[id].className = 'perm-badge stale show'; }
+  });
+  (step.danger || []).forEach(id => {
+    if(badges[id]){ badges[id].className = 'perm-badge danger show'; }
+  });
+
+  const total = Object.keys(badges).length;
+  const staleCount = Object.values(badges).filter(b => b.classList.contains('stale')||b.classList.contains('danger')).length;
+  creepCountEl.textContent = `${total} permissions total · ${staleCount} should have been revoked`;
+}
+
+buildCreepChrome();
+
+document.getElementById('creepStep').addEventListener('click', () => {
+  if(creepCursor >= careerSteps.length - 1) return;
+  creepCursor++;
+  applyCreepState(creepCursor);
+});
+document.getElementById('creepReset').addEventListener('click', () => {
+  creepCursor = -1;
+  Object.keys(badges).forEach(k => delete badges[k]);
+  creepPermsEl.innerHTML = '';
+  creepEventEl.innerHTML = '&mdash;';
+  creepEventEl.classList.remove('attack');
+  creepCountEl.textContent = '0 permissions';
+  creepHeaderEl.querySelectorAll('.creep-hcell[data-ci]').forEach(c => c.classList.remove('yr-active'));
+  creepRolesEl.querySelectorAll('.creep-role-row').forEach(r => r.classList.remove('active'));
+});
+
+/* ---------- PKCE animator ---------- */
+const pkceSteps = [
+  {
+    side:'left',
+    desc:'The client generates a random <strong>code_verifier</strong> (43–128 chars). This secret never leaves the client — it stays in server-side session or memory.',
+    leftBox:{label:'Generate code_verifier', cls:'lit-blue', kv:'code_verifier = "xK8mNq2pLr7vBc4d..."', kvcls:'blue'},
+  },
+  {
+    side:'left',
+    desc:'The client derives the <strong>code_challenge</strong> by hashing the verifier: <code>BASE64URL(SHA256(code_verifier))</code>. Only the challenge will be sent to the IdP. The verifier stays local.',
+    leftBox:{label:'Derive code_challenge', cls:'lit-blue', kv:'challenge = BASE64URL(SHA256(verifier))\n= "qR7vLm3wYx9..."', kvcls:'blue'},
+  },
+  {
+    side:'right',
+    arrow:'→', arrowCls:'lit',
+    desc:'Client redirects the browser to <strong>/authorize</strong> with the <em>code_challenge</em> (not the verifier). The IdP stores the challenge, tied to the code it will issue. Authenticate. MFA. Conditional Access.',
+    rightBox:{label:'Store code_challenge', cls:'lit-blue', kv:'stored: challenge="qR7vLm3wYx9..."', kvcls:'blue'},
+  },
+  {
+    side:'right',
+    arrow:'←', arrowCls:'lit',
+    desc:'IdP redirects back to the client with a short-lived, single-use <strong>authorization code</strong>. The code is useless alone — it is bound to the challenge the IdP stored. An attacker who intercepts it has nothing without the verifier.',
+    leftBox:{label:'Receive code', cls:'lit-amber', kv:'code = "0.AXoAbc123..." (expires ~60s)', kvcls:'amber'},
+  },
+  {
+    side:'right',
+    arrow:'→', arrowCls:'lit',
+    desc:'Client POSTs to <strong>/token</strong> (back channel — browser never sees this) with both the <em>code</em> and the <em>code_verifier</em>. This is the proof-of-origin step.',
+    rightBox:{label:'Verify: SHA256(verifier) == stored challenge?', cls:'lit-amber', kv:'SHA256("xK8mNq2p...") = "qR7vLm3wYx9..." ✓', kvcls:'green'},
+  },
+  {
+    side:'left',
+    arrow:'←', arrowCls:'lit-green',
+    desc:'The verifier matched the stored challenge. IdP issues tokens. <strong>The tokens travel back-channel only</strong> — they never touch the browser. This is why PKCE eliminates the attack surface of the implicit grant entirely.',
+    leftBox:{label:'Tokens received (back channel)', cls:'lit-green', kv:'id_token · access_token · refresh_token', kvcls:'green'},
+  }
+];
+
+let pkceCursor = -1;
+const pkceLeft = document.getElementById('pkceLeft');
+const pkceRight = document.getElementById('pkceRight');
+const pkceMid = document.getElementById('pkceMid');
+const pkceDesc = document.getElementById('pkceDesc');
+const pkceBoxesL = [], pkceBoxesR = [], pkceArrows = [];
+
+// pre-build all boxes and arrows as invisible
+pkceSteps.forEach((s, i) => {
+  const mkBox = (cfg) => {
+    const d = document.createElement('div');
+    d.className = 'pkce-box';
+    d.innerHTML = `<span class="pkce-step-label">step ${i+1}</span>${cfg.label}<span class="kv ${cfg.kvcls||''}">${(cfg.kv||'').replace(/\n/g,'<br>')}</span>`;
+    return d;
+  };
+  if(s.leftBox){ const b = mkBox(s.leftBox); pkceLeft.appendChild(b); pkceBoxesL[i] = b; }
+  else pkceBoxesL[i] = null;
+  if(s.rightBox){ const b = mkBox(s.rightBox); pkceRight.appendChild(b); pkceBoxesR[i] = b; }
+  else pkceBoxesR[i] = null;
+
+  if(s.arrow){
+    const wrap = document.createElement('div');
+    wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:2px;padding:3px 0';
+    wrap.innerHTML = `<span class="pkce-arr ${s.arrow==='←'?'flip':''}" data-pi="${i}">${s.arrow==='→'?'&#9654;':'&#9654;'}</span><span class="pkce-narr">step ${i+1}</span>`;
+    pkceMid.appendChild(wrap);
+    pkceArrows[i] = wrap.querySelector('.pkce-arr');
+  } else pkceArrows[i] = null;
+});
+
+function applyPkce(ci){
+  pkceBoxesL.forEach((b,i) => { if(b){ b.className = 'pkce-box' + (i===ci ? ' lit ' + (pkceSteps[i].leftBox.cls||'') : ''); } });
+  pkceBoxesR.forEach((b,i) => { if(b){ b.className = 'pkce-box' + (i===ci ? ' lit ' + (pkceSteps[i].rightBox.cls||'') : ''); } });
+  pkceArrows.forEach((a,i) => { if(a){ a.className = 'pkce-arr' + (pkceSteps[i].arrow==='←'?' flip':'') + (i===ci ? ' ' + (pkceSteps[i].arrowCls||'lit') : ''); } });
+  pkceDesc.innerHTML = pkceSteps[ci] ? pkceSteps[ci].desc : 'Done. The verifier proved origin without ever crossing the browser.';
+}
+
+document.getElementById('pkceStep').addEventListener('click', () => {
+  if(pkceCursor >= pkceSteps.length - 1) return;
+  pkceCursor++;
+  applyPkce(pkceCursor);
+});
+document.getElementById('pkceReset').addEventListener('click', () => {
+  pkceCursor = -1;
+  pkceBoxesL.forEach(b => { if(b) b.className = 'pkce-box'; });
+  pkceBoxesR.forEach(b => { if(b) b.className = 'pkce-box'; });
+  pkceArrows.forEach((a,i) => { if(a) a.className = 'pkce-arr' + (pkceSteps[i].arrow==='←'?' flip':''); });
+  pkceDesc.textContent = 'Press Step to walk through how PKCE binds the authorization code to the original requester.';
+});
+
+/* ---------- grant picker ---------- */
+const grantData = {
+  pkce:{
+    name:'Authorization Code + PKCE',
+    desc:'The right choice for any app where a user logs in via a browser. The authorization code never carries a token — it is short-lived and worthless without the code_verifier that only your app holds. Tokens travel server-to-server on the back channel. Use this for SPAs, mobile apps, and traditional web apps. Never use the implicit grant instead.'
+  },
+  cc:{
+    name:'Client Credentials Grant',
+    desc:'The right choice when there is no user. Your service authenticates as itself using a client_id + secret (or certificate) and receives an access token scoped to its own permissions. No refresh token, because the service can always re-authenticate. Treat the client secret with the same care as a root password — rotate it, vault it, and scope the permissions as tightly as possible.'
+  },
+  device:{
+    name:'Device Authorization Grant',
+    desc:'The right choice when the device cannot host a browser — smart TVs, CLI tools, IoT hardware. The device displays a short code and a URL. The user opens that URL on their phone or laptop, authenticates normally, and the device gets tokens via polling. The device never handles the user\'s credentials; the security model of the browser-based flow stays intact.'
+  },
+  refresh:{
+    name:'Refresh Token Grant',
+    desc:'Not a standalone flow — it is what you do when an access token expires. Exchange the refresh token for a new access token without user interaction. The IdP should rotate the refresh token on each use. If you detect a refresh token being reused (after rotation), revoke the entire token family immediately — it means the token was stolen.'
+  }
+};
+
+document.querySelectorAll('.grant-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.grant-opt').forEach(b => b.classList.remove('picked'));
+    btn.classList.add('picked');
+    const g = grantData[btn.dataset.grant];
+    document.getElementById('grantName').textContent = g.name;
+    document.getElementById('grantDesc').textContent = g.desc;
+    document.getElementById('grantResult').classList.add('show');
+  });
+});
+
+/* ---------- route data ---------- */
+const samlHops = [
+  {n:'01', from:0, to:1, ep:'GET https://treasury.fiserv.example/dashboard',
+   carry:'No session cookie. The SP has no idea who this is. Everything after this point exists only because of that.'},
+  {n:'02', from:1, to:0, ep:'302 &rarr; https://idp.fiserv.example/idp/SSO.saml2',
+   carry:'<b>Redirect binding.</b> Query string carries <b>SAMLRequest</b> (deflate, base64, url encoded), <b>RelayState</b> = /dashboard, <b>SigAlg</b> and <b>Signature</b>. The SP stores the request ID <b>_req-6b1e9d</b> in server side session. That stored ID is the entire basis of the InResponseTo check later.'},
+  {n:'03', from:0, to:2, ep:'GET /idp/SSO.saml2?SAMLRequest=fVLLbtsw...&amp;RelayState=%2Fdashboard',
+   carry:'The browser hands the request to the IdP. Ping Federate verifies the request signature against the SP connection certificate, then resolves which connection this is by <b>Issuer</b>.'},
+  {n:'04', from:2, to:2, self:true, ep:'IdP session evaluation',
+   carry:'Existing PF session cookie? Reuse it, no prompt, and <b>auth_time stays old</b>. No session? Password, then MFA policy, then set the session cookie on idp.fiserv.example. The AuthnContextClassRef written into the assertion is decided here, at this step, by policy.'},
+  {n:'05', from:2, to:0, ep:'200 OK &nbsp;text/html &nbsp;auto submitting form',
+   carry:'<b>POST binding.</b> Not a redirect. A hidden form with a body onload submit, because the response is too large for a URL. Body carries <b>SAMLResponse</b> (base64) and the RelayState echoed back untouched.'},
+  {n:'06', from:0, to:1, ep:'POST https://treasury.fiserv.example/sso/acs',
+   carry:'The assertion arrives at the SP <b>in the body of a request the user made</b>. This is the hop where every attack in tab 01 happens. The browser has had the signed document in its possession the whole time.'},
+  {n:'07', from:1, to:1, self:true, ep:'Validation chain, in order',
+   carry:'Signature over the assertion &rarr; Issuer against trust store &rarr; Destination against this ACS &rarr; InResponseTo against the stored request ID &rarr; Conditions window &rarr; Audience is me &rarr; Recipient matches &rarr; AuthnContext is what I asked for. <b>Order matters:</b> verify the signature first, then read claims only from the element you verified.'},
+  {n:'08', from:1, to:0, ep:'302 &rarr; /dashboard &nbsp;+&nbsp; Set-Cookie: session=...',
+   carry:'The assertion is now dead. Its job was to mint a local session cookie and nothing else. SessionIndex gets stored against that cookie so a later LogoutRequest can find it.'}
+];
+
+const oidcHops = [
+  {n:'01', from:0, to:1, ep:'GET https://treasury.fiserv.example/dashboard',
+   carry:'Same start. No session.'},
+  {n:'02', from:1, to:0, ep:'302 &rarr; https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize',
+   carry:'Carries <b>client_id</b>, <b>redirect_uri</b>, <b>scope=openid</b>, <b>response_type=code</b>, <b>state</b>, <b>nonce</b>, <b>code_challenge</b> (S256). The RP keeps <b>state</b>, <b>nonce</b> and the <b>code_verifier</b> server side. Three separate secrets, three separate jobs.'},
+  {n:'03', from:0, to:2, ep:'GET /authorize?...',
+   carry:'Entra authenticates, applies Conditional Access, evaluates the session. Same decision point as SAML hop 04, different vocabulary.'},
+  {n:'04', from:2, to:0, ep:'302 &rarr; https://treasury.fiserv.example/callback',
+   carry:'Carries only <b>code</b> and <b>state</b>. The code is short lived, single use, and worthless without the code_verifier. <b>Nothing sensitive has crossed the browser yet.</b>'},
+  {n:'05', from:0, to:1, ep:'GET /callback?code=0.AXoA...&amp;state=xyz',
+   carry:'The RP checks <b>state</b> against session. This is CSRF protection on the redirect, and it is not the same thing as nonce. People conflate them constantly.'},
+  {n:'06', from:1, to:2, back:true, ep:'POST https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token',
+   carry:'<b>Back channel. Server to server, direct TLS.</b> Carries the <b>code</b>, the <b>code_verifier</b>, and client authentication. Entra recomputes S256(code_verifier) and compares it to the challenge from hop 02. A stolen code fails here, because the thief never had the verifier.'},
+  {n:'07', from:2, to:1, back:true, ep:'200 OK &nbsp;{ id_token, access_token, refresh_token }',
+   carry:'<b>The tokens never touch the browser.</b> Compare this to SAML hop 05. That single difference is why OIDC does not need an equivalent of half the SAML document defences.'},
+  {n:'08', from:1, to:1, self:true, ep:'Validation chain',
+   carry:'Fetch JWKS by <b>kid</b> (cached) &rarr; verify signature with pinned <b>alg</b> &rarr; <b>iss</b> exact match and tenant allowlist &rarr; <b>aud</b> is my client_id &rarr; <b>nonce</b> matches what I sent &rarr; <b>exp</b> and <b>auth_time</b>. Then a local session cookie, exactly as SAML did.'}
+];
+
+function renderHops(id, hops){
+  const host = document.getElementById(id);
+  hops.forEach(h => {
+    const row = document.createElement('div');
+    row.className = 'hop';
+    const lo = Math.min(h.from, h.to), hi = Math.max(h.from, h.to);
+    const dir = h.self ? '&#9679;' : (h.to > h.from ? '&#9654;' : '&#9664;');
+    const label = h.self ? 'in place' : (h.to > h.from ? 'right' : 'left');
+    const bar = document.createElement('div');
+    bar.className = 'bar' + (h.back ? ' back' : '') + (h.self ? ' self' : '');
+    bar.style.gridColumn = (lo+1) + ' / ' + (hi+2);
+    bar.innerHTML = `<div class="n"><span class="arrow${h.back?' back':''}">${dir}</span> &nbsp;${h.n}${h.back?' &nbsp;&middot;&nbsp; BACK CHANNEL':''}</div>
+      <p class="ep">${h.ep}</p>
+      <p class="carry">${h.carry}</p>`;
+    row.appendChild(bar);
+    host.appendChild(row);
+  });
+}
+/* ---------- animated UML sequence engine ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+const LANES = {
+  saml: [
+    {who:'User Agent',    what:'the browser'},
+    {who:'Service Provider', what:'treasury.fiserv.example'},
+    {who:'Identity Provider', what:'Ping Federate'}
+  ],
+  oidc: [
+    {who:'User Agent',    what:'the browser'},
+    {who:'Relying Party', what:'treasury.fiserv.example'},
+    {who:'Identity Provider', what:'Microsoft Entra ID'}
+  ]
+};
+const NOTES = {
+  saml:{h:'The one thing to say about this diagram',
+    t:'Watch the left lifeline. Every single message touches it. The SP and the IdP never talk to each other, not once, no socket, no callback. Every byte of trust travels through the browser, which is the one participant fully controlled by the person being authenticated. That is not a flaw, it is the design, and it is what lets you federate to a vendor with nothing but a certificate exchange. But it means the signed assertion is a bearer credential handed to the attacker for delivery. Every field in tab 01 exists because of this one fact.'},
+  oidc:{h:'Now watch hops 06 and 07',
+    t:'Those two are green, and they are the only messages in either diagram that never touch the browser lifeline. That is the entire structural difference between the protocols. The browser carries a code, which is useless alone, and the tokens come back over a direct TLS connection the user never sees. SAML solved delivery over a hostile channel by hardening the document. OIDC solved it by refusing to use the channel.'}
+};
+
+const X = [130, 445, 760];
+const TOP = 92, GAP = 78, SELF_DROP = 34;
+const svg = document.getElementById('seq');
+const seqPanel = document.getElementById('seqPanel');
+const note = document.getElementById('routeNote');
+
+let proto = 'saml', steps = [], cursor = -1, playing = false, raf = null;
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function el(n, attrs, txt){
+  const e = document.createElementNS(NS, n);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(txt != null) e.textContent = txt;
+  return e;
+}
+function plain(html){
+  const d = document.createElement('div'); d.innerHTML = html; return d.textContent;
+}
+function clip(t, n){ return t.length > n ? t.slice(0, n-1) + '\u2026' : t; }
+
+function build(){
+  const hops = proto === 'kerb' ? kerbHops : proto === 'saml' ? samlHops : oidcHops;
+  const H = TOP + hops.length * GAP + 40;
+  svg.setAttribute('viewBox', `0 0 890 ${H}`);
+  svg.setAttribute('width', '100%');
+  svg.innerHTML = '';
+  steps = [];
+
+  const defs = el('defs');
+  ['steel','verify','muted'].forEach(c => {
+    const m = el('marker',{id:'ah-'+c, viewBox:'0 0 10 10', refX:'9', refY:'5',
+      markerWidth:'7', markerHeight:'7', orient:'auto-start-reverse'});
+    m.appendChild(el('path',{d:'M0,0 L10,5 L0,10 z', fill:'var(--'+c+')'}));
+    defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+
+  /* lifelines + actor heads */
+  LANES[proto].forEach((l, i) => {
+    svg.appendChild(el('line',{x1:X[i], y1:66, x2:X[i], y2:TOP + hops.length*GAP + 18,
+      stroke:'var(--line)', 'stroke-width':1, 'stroke-dasharray':'4 5'}));
+    const bw = 210;
+    svg.appendChild(el('rect',{x:X[i]-bw/2, y:14, width:bw, height:44, rx:3,
+      fill:'var(--panel-2)', stroke:'var(--line)'}));
+    const t1 = el('text',{x:X[i], y:34, 'text-anchor':'middle', class:'ln-who'}, l.who);
+    const t2 = el('text',{x:X[i], y:48, 'text-anchor':'middle', class:'ln-what'}, l.what);
+    svg.appendChild(t1); svg.appendChild(t2);
+  });
+
+  /* messages */
+  hops.forEach((h, i) => {
+    const y = TOP + i*GAP;
+    const g = el('g', {class:'msg', opacity:'0'});
+    const col = h.back ? 'verify' : 'steel';
+    let path, len;
+
+    if(h.self){
+      const x = X[h.from];
+      path = el('path',{d:`M${x},${y} h64 v${SELF_DROP} h-58`, fill:'none',
+        stroke:`var(--${col})`, 'stroke-width':1.6, 'data-col':col});
+      g.appendChild(el('text',{x:x+74, y:y+SELF_DROP-8, class:'msg-ep'},
+        clip(plain(h.ep), 46)));
+    } else {
+      const x1 = X[h.from], x2 = X[h.to];
+      const dir = x2 > x1 ? 1 : -1;
+      path = el('path',{d:`M${x1},${y} L${x2 - dir*5},${y}`, fill:'none',
+        stroke:`var(--${col})`, 'stroke-width':1.6, 'data-col':col});
+      const mid = (x1 + x2)/2;
+      g.appendChild(el('text',{x:mid, y:y-9, 'text-anchor':'middle', class:'msg-ep'},
+        clip(plain(h.ep), 58)));
+      if(h.back)
+        g.appendChild(el('text',{x:mid, y:y+16, 'text-anchor':'middle', class:'msg-back'},
+          'back channel \u00b7 browser never sees this'));
+    }
+    g.insertBefore(path, g.firstChild);
+    g.appendChild(el('text',{x:8, y:y+4, class:'msg-n'}, h.n));
+
+    const dot = el('circle',{r:5.5, cx:X[h.from], cy:y, fill:`var(--${col})`, opacity:'0'});
+    g.appendChild(dot);
+    svg.appendChild(g);
+    steps.push({g, path, dot, h, y});
+  });
+
+  note.innerHTML = `<div class="eyebrow">${NOTES[proto].h}</div><p>${NOTES[proto].t}</p>`;
+  cursor = -1;
+  seqPanel.innerHTML = '<p class="panel-empty">Press Play. Watch which lifeline every message has to touch.</p>';
+}
+
+function showPanel(h){
+  seqPanel.innerHTML = `
+    <p class="field-name" style="font-size:12px;color:var(--steel);letter-spacing:.14em">
+      HOP ${h.n}${h.back ? ' \u00b7 BACK CHANNEL' : ''}</p>
+    <p class="field-name" style="font-size:13px;line-height:1.6">${h.ep}</p>
+    <div class="block h-field"><h4>What is riding on it</h4><p>${h.carry}</p></div>`;
+}
+
+function advance(cb){
+  if(cursor >= steps.length - 1){ cb && cb(true); return; }
+  cursor++;
+  const s = steps[cursor];
+  steps.forEach((o,i) => o.g.setAttribute('opacity', i <= cursor ? '1' : '0'));
+  steps.forEach((o,i) => o.g.classList.toggle('cur', i === cursor));
+  showPanel(s.h);
+
+  const arrive = () => s.path.setAttribute('marker-end',
+    'url(#ah-' + s.path.getAttribute('data-col') + ')');
+
+  if(reduce){ arrive(); cb && cb(false); return; }
+
+  s.path.removeAttribute('marker-end');
+  const total = s.path.getTotalLength();
+  s.path.style.strokeDasharray = total;
+  s.path.style.strokeDashoffset = total;
+  s.dot.setAttribute('opacity','1');
+
+  const dur = 820;
+  const t0 = performance.now();
+  cancelAnimationFrame(raf);
+  (function frame(t){
+    const p = Math.min(1, (t - t0)/dur);
+    const e = p < .5 ? 2*p*p : -1 + (4 - 2*p)*p;
+    s.path.style.strokeDashoffset = total * (1 - e);
+    const pt = s.path.getPointAtLength(total * e);
+    s.dot.setAttribute('cx', pt.x); s.dot.setAttribute('cy', pt.y);
+    if(p < 1) raf = requestAnimationFrame(frame);
+    else { s.dot.setAttribute('opacity','0'); arrive(); cb && cb(false); }
+  })(t0);
+}
+
+function play(){
+  if(playing){ playing = false; cancelAnimationFrame(raf);
+    document.getElementById('seqPlay').textContent = 'Play'; return; }
+  if(cursor >= steps.length - 1) build();
+  playing = true;
+  document.getElementById('seqPlay').textContent = 'Pause';
+  (function next(){
+    if(!playing) return;
+    advance(done => {
+      if(done || !playing){ playing = false;
+        document.getElementById('seqPlay').textContent = 'Replay'; return; }
+      setTimeout(next, 1400);
+    });
+  })();
+}
+
+document.getElementById('seqPlay').addEventListener('click', play);
+document.getElementById('seqStep').addEventListener('click', () => {
+  playing = false; document.getElementById('seqPlay').textContent = 'Play';
+  if(cursor >= steps.length - 1) build();
+  advance();
+});
+document.getElementById('seqReset').addEventListener('click', () => {
+  playing = false; cancelAnimationFrame(raf);
+  document.getElementById('seqPlay').textContent = 'Play'; build();
+});
+document.querySelectorAll('.seg-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.seg-btn').forEach(x =>
+    x.setAttribute('aria-pressed', String(x === b)));
+  playing = false; cancelAnimationFrame(raf);
+  document.getElementById('seqPlay').textContent = 'Play';
+  proto = b.dataset.proto; build();
+}));
+
+build();
+
+
+/* ---------- SAML data ---------- */
+const samlFields = {
+  destination: {
+    name: 'Destination',
+    role: 'Where this response is allowed to be delivered.',
+    what: 'The IdP writes the exact ACS URL it intended. The SP compares it to the URL that actually received the POST.',
+    attack: 'Without the check, a response captured or misrouted to any endpoint on the SP is still accepted. It also removes the only signal that the response was redirected somewhere it was never meant to go.',
+    check: 'String compare against the configured ACS URL, exact match, no prefix matching. Ping Federate ties this to the endpoint on the SP connection, so a copy pasted connection with a stale ACS is the usual source of drift.',
+    broken: 'https://apps.partner-portal.example/acs'
+  },
+  inresponseto: {
+    name: 'InResponseTo',
+    role: 'Binds this response to the request this SP actually sent.',
+    what: 'Holds the ID of the outstanding AuthnRequest. The SP keeps that ID in session and matches it on arrival.',
+    attack: 'Unvalidated, the SP accepts responses it never asked for. An attacker who obtains any valid assertion for a victim, from an IdP initiated flow, a log, a proxy, replays it into the victim browser and logs them in as an account the attacker controls, or logs themselves in as the victim. This is also why IdP initiated SSO is structurally weaker: there is no request to bind to, so this defence does not exist at all.',
+    check: 'Reject if missing on an SP initiated flow. Reject if it does not match a pending request in session. Consume the ID once, then discard it.',
+    broken: '(removed)'
+  },
+  issuer: {
+    name: 'Issuer',
+    role: 'Which IdP claims to have produced this.',
+    what: 'An entity ID. On its own it proves nothing, it is a lookup key that tells the SP which signing certificate to trust for this document.',
+    attack: 'If the SP resolves the certificate from the document instead of from configuration, the attacker supplies both the assertion and the key that signs it. Self signed, self issued, perfectly valid maths, completely worthless.',
+    check: 'Issuer must map to a pre configured trust anchor. Never accept an embedded certificate as the trust source. This is where a certificate rotation goes wrong: the new cert gets added, the old one never gets removed, and the trust store quietly accepts two issuers for years.',
+    broken: 'https://idp.attacker-controlled.example'
+  },
+  sigref: {
+    name: 'Signature Reference URI',
+    role: 'Which part of this document the signature actually covers.',
+    what: 'Points at the ID of the element the signature protects. Everything outside it is unsigned text.',
+    attack: 'XML signature wrapping. The attacker keeps the original signed assertion intact so verification passes, then adds a second forged assertion elsewhere in the tree. The signature library validates the signed one, the application layer reads the first one it finds, and those are different elements. The document is both correctly signed and completely forged.',
+    check: 'Verify the signature, then read claims only from the element that was verified, by reference, not by re searching the document. Reject documents with more than one Assertion. This is a code and library problem more than a config one, which is why it survives audits.',
+    broken: '#_forged-assertion-2'
+  },
+  conditions: {
+    name: 'Conditions NotBefore / NotOnOrAfter',
+    role: 'The window in which this assertion means anything.',
+    what: 'A validity window, usually a few minutes wide, expressed in UTC.',
+    attack: 'Widen it and a stolen assertion stays useful for hours. Skip the check and it is a bearer credential with no expiry, which is exactly what an attacker wants out of a log file or a browser history.',
+    check: 'Enforce both bounds. Allow a small clock skew, sixty seconds is defensible, five minutes is a decision not an accident. Skew tolerance is a security setting: every second you add is a second a replay stays valid.',
+    broken: '2029-01-01T00:00:00Z'
+  },
+  audience: {
+    name: 'AudienceRestriction &middot; Audience',
+    role: 'Which SP this assertion was minted for.',
+    what: 'The entity ID of the intended recipient. The SP checks that it is itself.',
+    attack: 'The cross SP replay. Your IdP serves fifty applications. A low value app, an expenses tool, a vendor portal, receives a perfectly valid assertion in the normal course of business. If the treasury app does not check the audience, that same assertion is a valid login there too. The attacker never breaks anything, they just carry a ticket from one door to another.',
+    check: 'Exact match on your own entity ID. No wildcards. If the audience is absent, reject. This is the single field where a one line config error turns every application on the federation into a skeleton key for the others.',
+    broken: '(any)'
+  },
+  nameid: {
+    name: 'NameID &middot; Format',
+    role: 'Who the subject is, and how stable that answer is.',
+    what: 'The identifier plus a format that tells you what kind of identifier it is: transient, persistent, emailAddress, unspecified.',
+    attack: 'Format confusion is an account takeover primitive. If the SP keys accounts on emailAddress and the IdP lets a user set their own unverified email, the attacker types the victim address and becomes them. Transient IDs recycle, so a new session can land on a previous user record. And unspecified means the SP has decided not to know.',
+    check: 'Pin the format on the connection, key accounts on an immutable identifier, never on anything the user can edit. Persistent for account linking, transient when you genuinely want no correlation across SPs.',
+    broken: 'admin@fiserv.example'
+  },
+  recipient: {
+    name: 'SubjectConfirmationData &middot; Recipient',
+    role: 'The second, independent statement of where this may be used.',
+    what: 'Bearer confirmation. It restates the ACS URL and carries its own expiry, inside the signed assertion rather than on the outer response.',
+    attack: 'It exists because Destination sits on the Response element, which may not be the element that was signed. Recipient sits inside the signed assertion, so it survives wrapping and outer element tampering. Ignore it and you have thrown away the copy an attacker cannot rewrite.',
+    check: 'Validate it as strictly as Destination, and treat a mismatch between the two as an attack rather than a config quirk.',
+    broken: 'https://apps.partner-portal.example/acs'
+  },
+  authncontext: {
+    name: 'AuthnContextClassRef',
+    role: 'How the user actually proved who they were.',
+    what: 'The method behind the login. Password, password over TLS, MFA, certificate.',
+    attack: 'Not an authentication bypass, an assurance bypass. The SP asked for MFA and got a password only assertion, and accepted it because nobody read this field. Step up authentication that is requested but never verified is theatre. Every stepped up transaction in that app is running on a single factor.',
+    check: 'If your RequestedAuthnContext asked for something, enforce the answer. Reject or step up on a downgrade, and log the mismatch. This is one of the highest value checks in the document and one of the least implemented.',
+    broken: 'urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified'
+  },
+  sessionindex: {
+    name: 'SessionIndex',
+    role: 'The handle single logout depends on.',
+    what: 'Identifies the IdP session behind this assertion.',
+    attack: 'Drop it and you cannot do targeted single logout, so terminating an IdP session leaves live SP sessions behind. On a leaver, the account is disabled in the directory and the application session keeps working until it expires on its own. That gap is the whole reason offboarding is a security control and not a paperwork step.',
+    check: 'Store it against the local session and honour LogoutRequest. Also cap local session lifetime independently, because logout propagation fails quietly and often.',
+    broken: '(removed)'
+  },
+  attrs: {
+    name: 'AttributeStatement &middot; Role',
+    role: 'Entitlements delivered inside the login.',
+    what: 'Groups or roles the SP maps to local permissions.',
+    attack: 'This is where privilege creep gets industrialised. The assertion is signed, so the values are trustworthy, but trustworthy is not the same as correct. If the IdP sends every group a user belongs to and the SP maps generously, then eight years of role changes arrive at the application as live entitlements. Nothing is compromised. The user simply has access to everything they have ever done.',
+    check: 'Filter at the IdP, map explicitly at the SP, deny by default on unknown values. Recertify what the mapping grants, not just what the group is called. A group named after a team that dissolved in 2019 still resolves to permissions today.',
+    broken: 'Domain Admins'
+  }
+};
+
+const samlXML = `<span class="tag">&lt;samlp:Response</span> <span class="attr">ID=</span>"_8f4a2c" <span class="attr">Version=</span>"2.0"
+  <span class="attr">Destination=</span>"<span class="f" data-f="destination" tabindex="0">https://treasury.fiserv.example/sso/acs</span>"
+  <span class="attr">InResponseTo=</span>"<span class="f" data-f="inresponseto" tabindex="0">_req-6b1e9d</span>"<span class="tag">&gt;</span>
+
+  <span class="tag">&lt;saml:Issuer&gt;</span><span class="f" data-f="issuer" tabindex="0">https://idp.fiserv.example</span><span class="tag">&lt;/saml:Issuer&gt;</span>
+
+  <span class="tag">&lt;ds:Signature&gt;</span>
+    <span class="tag">&lt;ds:SignedInfo&gt;</span>
+      <span class="tag">&lt;ds:Reference</span> <span class="attr">URI=</span>"<span class="f" data-f="sigref" tabindex="0">#_assert-1</span>"<span class="tag">/&gt;</span>
+    <span class="tag">&lt;/ds:SignedInfo&gt;</span>
+    <span class="tag">&lt;ds:SignatureValue&gt;</span>Rk9SR0VEU0lHTkFUVVJF...<span class="tag">&lt;/ds:SignatureValue&gt;</span>
+  <span class="tag">&lt;/ds:Signature&gt;</span>
+
+  <span class="tag">&lt;saml:Assertion</span> <span class="attr">ID=</span>"_assert-1"<span class="tag">&gt;</span>
+
+    <span class="tag">&lt;saml:Subject&gt;</span>
+      <span class="tag">&lt;saml:NameID</span> <span class="attr">Format=</span>"...:persistent"<span class="tag">&gt;</span><span class="f" data-f="nameid" tabindex="0">a7f3e91c-4d22</span><span class="tag">&lt;/saml:NameID&gt;</span>
+      <span class="tag">&lt;saml:SubjectConfirmationData</span>
+        <span class="attr">Recipient=</span>"<span class="f" data-f="recipient" tabindex="0">https://treasury.fiserv.example/sso/acs</span>"<span class="tag">/&gt;</span>
+    <span class="tag">&lt;/saml:Subject&gt;</span>
+
+    <span class="tag">&lt;saml:Conditions</span>
+      <span class="attr">NotBefore=</span>"2026-07-17T09:14:00Z"
+      <span class="attr">NotOnOrAfter=</span>"<span class="f" data-f="conditions" tabindex="0">2026-07-17T09:19:00Z</span>"<span class="tag">&gt;</span>
+      <span class="tag">&lt;saml:AudienceRestriction&gt;</span>
+        <span class="tag">&lt;saml:Audience&gt;</span><span class="f" data-f="audience" tabindex="0">https://treasury.fiserv.example</span><span class="tag">&lt;/saml:Audience&gt;</span>
+      <span class="tag">&lt;/saml:AudienceRestriction&gt;</span>
+    <span class="tag">&lt;/saml:Conditions&gt;</span>
+
+    <span class="tag">&lt;saml:AuthnStatement</span> <span class="attr">SessionIndex=</span>"<span class="f" data-f="sessionindex" tabindex="0">_sess-2d90ab</span>"<span class="tag">&gt;</span>
+      <span class="tag">&lt;saml:AuthnContextClassRef&gt;</span>
+        <span class="f" data-f="authncontext" tabindex="0">urn:oasis:names:tc:SAML:2.0:ac:classes:MultiFactor</span>
+      <span class="tag">&lt;/saml:AuthnContextClassRef&gt;</span>
+    <span class="tag">&lt;/saml:AuthnStatement&gt;</span>
+
+    <span class="tag">&lt;saml:AttributeStatement&gt;</span>
+      <span class="tag">&lt;saml:Attribute</span> <span class="attr">Name=</span>"Role"<span class="tag">&gt;</span>
+        <span class="tag">&lt;saml:AttributeValue&gt;</span><span class="f" data-f="attrs" tabindex="0">Treasury.Analyst.ReadOnly</span><span class="tag">&lt;/saml:AttributeValue&gt;</span>
+      <span class="tag">&lt;/saml:Attribute&gt;</span>
+    <span class="tag">&lt;/saml:AttributeStatement&gt;</span>
+
+  <span class="tag">&lt;/saml:Assertion&gt;</span>
+<span class="tag">&lt;/samlp:Response&gt;</span>`;
+
+/* fake base64 blob for the decode moment */
+const blob = document.getElementById('b64blob');
+blob.textContent = btoa(samlXML.replace(/<[^>]+>/g,'')).replace(/(.{1,})/g,'$1');
+
+document.getElementById('decodeBtn').addEventListener('click', () => {
+  document.getElementById('samlDoc').innerHTML = samlXML;
+  document.getElementById('samlGrid').classList.remove('hidden');
+  document.getElementById('b64card').classList.add('hidden');
+  wire('samlDoc', samlFields, 'samlPanel');
+});
+
+/* ---------- OIDC data ---------- */
+const oidcFields = {
+  alg: {
+    name: 'alg',
+    role: 'Which algorithm the verifier is told to use.',
+    what: 'Header claim naming the signature algorithm.',
+    attack: 'Two classics, both from trusting the attacker to describe their own token. Set it to <code class="inline">none</code> and a lazy library skips verification entirely. Or switch <code class="inline">RS256</code> to <code class="inline">HS256</code>: the library sees a symmetric algorithm, reaches for the key it has, which is the IdP public key, and HMACs with it. That key is public. The attacker signs anything.',
+    check: 'Pin the expected algorithm in code from configuration, never read it from the token. Reject <code class="inline">none</code> unconditionally. Any library that lets the token choose the algorithm is the vulnerability.',
+    broken: '"none"'
+  },
+  kid: {
+    name: 'kid',
+    role: 'Which key from the JWKS signed this.',
+    what: 'A key identifier used to select from the published key set.',
+    attack: 'If <code class="inline">kid</code> is used to build a path or a query, it is an injection point straight into file reads or SQL. A subtler failure: an unknown kid triggers a JWKS refetch, so an attacker rotates kids in a loop and turns your verifier into a request amplifier against your own IdP.',
+    check: 'Treat it as an opaque lookup key against a cached JWKS. Rate limit refetch. Fail closed on unknown.',
+    broken: '"../../../dev/null"'
+  },
+  iss: {
+    name: 'iss',
+    role: 'Who issued this token.',
+    what: 'Must match the issuer from discovery, exactly, including scheme and trailing slash.',
+    attack: 'In multi tenant Entra ID this is the one that bites. If you validate the signature against the common endpoint but never check the tenant in <code class="inline">iss</code> and <code class="inline">tid</code>, then any Microsoft tenant on earth produces tokens your app trusts. Anyone can create a tenant in ten minutes. Your app is now a public login.',
+    check: 'Exact string match against a configured issuer. In multi tenant setups validate the tenant explicitly against an allowlist. Signature validity says the token is real, not that it is yours.',
+    broken: '"https://login.microsoftonline.com/9f2c.../v2.0"'
+  },
+  aud: {
+    name: 'aud',
+    role: 'Which client this token is for.',
+    what: 'The client ID of the intended recipient.',
+    attack: 'The confused deputy. Your app accepts an ID token from an authorised user, but that token was minted for a different client. Any app on the same IdP can now hand you a token and log in as its users. It is the same cross SP replay as SAML Audience, same fix, thirty years of the same lesson.',
+    check: 'Match your own client ID. Reject arrays containing anything you do not recognise, and if the array has more than one entry, verify <code class="inline">azp</code> too.',
+    broken: '"a1b2c3-other-app"'
+  },
+  azp: {
+    name: 'azp',
+    role: 'Who the token was actually released to.',
+    what: 'Authorised party. It matters when <code class="inline">aud</code> holds more than one value or when a token is issued to one client for use at another.',
+    attack: 'It is the field that distinguishes "this token names me" from "this token was given to me". Ignore it in a multi audience deployment and you cannot tell a legitimately shared token from one that was passed sideways by a client that should never have held it.',
+    check: 'When present, it must be your client ID. When <code class="inline">aud</code> is an array, its presence is required.',
+    broken: '"a1b2c3-other-app"'
+  },
+  sub: {
+    name: 'sub',
+    role: 'The user identifier, scoped to this issuer.',
+    what: 'Stable and opaque within the issuer. Not globally unique.',
+    attack: 'Key accounts on <code class="inline">email</code> instead and an IdP with unverified email lets a user claim someone else. Key on <code class="inline">sub</code> alone across multiple issuers and two different IdPs eventually collide on the same value, silently merging two people into one account.',
+    check: 'The account key is the pair, issuer plus subject. Never email. Never sub alone in a multi IdP estate.',
+    broken: '"admin@fiserv.example"'
+  },
+  nonce: {
+    name: 'nonce',
+    role: 'Binds this token to your authentication request.',
+    what: 'The client generates it, sends it in the request, and the IdP copies it into the token.',
+    attack: 'This is the OIDC answer to <code class="inline">InResponseTo</code>. Without it, a token obtained elsewhere is injected into your flow and accepted, because nothing ties the token to the request you made. It is also the reason people confuse it with <code class="inline">state</code>. State protects the redirect against CSRF. Nonce protects the token against replay. Different layer, different attack, and having one does not give you the other.',
+    check: 'Generate per request, store server side, compare, consume once. Reject if missing when you sent one.',
+    broken: '(absent)'
+  },
+  at_hash: {
+    name: 'at_hash',
+    role: 'Ties the ID token to the access token it arrived with.',
+    what: 'A hash of the access token, carried inside the signed ID token.',
+    attack: 'Token substitution. In flows where both tokens come back together, an attacker swaps in their own access token beside a victim ID token. You authenticate as the victim and then call APIs with the attacker token, or the reverse depending on the flow. The ID token is signed, the access token is not bound to it, and the gap between them is the attack.',
+    check: 'Verify when present. Better still, use the authorisation code flow with PKCE and avoid the shape of flow where this problem arises at all.',
+    broken: '(absent)'
+  },
+  exp: {
+    name: 'exp / iat / auth_time',
+    role: 'Freshness, and three different meanings of it.',
+    what: '<code class="inline">exp</code> is when the token dies. <code class="inline">iat</code> is when it was minted. <code class="inline">auth_time</code> is when the human actually authenticated.',
+    attack: 'The one people miss is <code class="inline">auth_time</code>. A token can be issued seconds ago from a session where the user last typed a password in March. Every silent renewal produces a fresh token from stale authentication. If a transaction demands a real human right now, <code class="inline">exp</code> tells you nothing at all. That is what <code class="inline">max_age</code> and <code class="inline">auth_time</code> are for.',
+    check: 'Enforce exp with minimal skew. For sensitive operations send <code class="inline">max_age</code> and verify <code class="inline">auth_time</code> against it, and step up if it is stale.',
+    broken: '2082788400'
+  }
+};
+
+const oidcJSON = `<span class="attr">// header</span>
+{
+  <span class="tag">"alg"</span>: <span class="f" data-f="alg" tabindex="0">"RS256"</span>,
+  <span class="tag">"kid"</span>: <span class="f" data-f="kid" tabindex="0">"pF9-2mQxK7"</span>,
+  <span class="tag">"typ"</span>: "JWT"
+}
+
+<span class="attr">// payload</span>
+{
+  <span class="tag">"iss"</span>: <span class="f" data-f="iss" tabindex="0">"https://login.microsoftonline.com/7a1e.../v2.0"</span>,
+  <span class="tag">"aud"</span>: <span class="f" data-f="aud" tabindex="0">"4c9d1f7e-treasury-web"</span>,
+  <span class="tag">"azp"</span>: <span class="f" data-f="azp" tabindex="0">"4c9d1f7e-treasury-web"</span>,
+  <span class="tag">"sub"</span>: <span class="f" data-f="sub" tabindex="0">"a7f3e91c-4d22"</span>,
+  <span class="tag">"tid"</span>: "7a1e5b3c-...",
+  <span class="tag">"nonce"</span>: <span class="f" data-f="nonce" tabindex="0">"n-0S6_WzA2Mj"</span>,
+  <span class="tag">"at_hash"</span>: <span class="f" data-f="at_hash" tabindex="0">"tK4mB1xR9pQw"</span>,
+  <span class="tag">"iat"</span>: 1784281440,
+  <span class="tag">"auth_time"</span>: 1784281380,
+  <span class="tag">"exp"</span>: <span class="f" data-f="exp" tabindex="0">1784285040</span>,
+  <span class="tag">"amr"</span>: ["pwd", "mfa"]
+}
+
+<span class="attr">// signature</span>
+QmluZFRoaXNUb1RoZVJlcXVlc3RPckl0SXNKdXN0QUJlYXJlcg</span>`;
+
+document.getElementById('oidcDoc').innerHTML = oidcJSON;
+wire('oidcDoc', oidcFields, 'oidcPanel');
+
+/* ---------- shared inspector ---------- */
+function wire(docId, data, panelId){
+  const doc = document.getElementById(docId);
+  const panel = document.getElementById(panelId);
+  doc.querySelectorAll('.f').forEach(el => {
+    el.dataset.orig = el.textContent;
+    const open = () => {
+      doc.querySelectorAll('.f').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      render(el, data[el.dataset.f], panel, doc, data);
+    };
+    el.addEventListener('click', open);
+    el.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){e.preventDefault();open();} });
+  });
+}
+
+function render(el, d, panel, doc, data){
+  const isBroken = el.classList.contains('broken');
+  panel.innerHTML = `
+    ${isBroken ? '<div class="stamp">TAMPERED</div>' : ''}
+    <p class="field-name">${d.name}</p>
+    <p class="field-role">${d.role}</p>
+    <div class="block h-field"><h4>What it is</h4><p>${d.what}</p></div>
+    <div class="block h-attack"><h4>If nobody validates it</h4><p>${d.attack}</p></div>
+    <div class="block h-check"><h4>The check that stops it</h4><p>${d.check}</p></div>
+    <div class="block">
+      <div class="row">
+        <button class="action danger" id="breakBtn">${isBroken ? 'Repair field' : 'Break it'}</button>
+      </div>
+      <div id="verdictSlot"></div>
+    </div>`;
+  panel.querySelector('#breakBtn').addEventListener('click', () => {
+    if(el.classList.contains('broken')){
+      el.textContent = el.dataset.orig;
+      el.classList.remove('broken');
+    } else {
+      el.textContent = d.broken;
+      el.classList.add('broken');
+    }
+    render(el, d, panel, doc, data);
+    if(el.classList.contains('broken')){
+      panel.querySelector('#verdictSlot').innerHTML = `
+        <div class="verdict">
+          <div class="eyebrow">Verdict</div>
+          <p><strong>Strict verifier:</strong> rejects. The document is signed and still refused, because a valid signature only proves the IdP wrote it, never that it was written for you, for now, or for this request.</p>
+          <p><strong>Permissive verifier:</strong> accepts, logs a successful login, and produces no error anywhere. That is the part worth sitting with. This failure has no alert attached to it.</p>
+        </div>`;
+    }
+  });
+}
+
+function repairAll(docId, panelId){
+  const doc = document.getElementById(docId);
+  doc.querySelectorAll('.f').forEach(el => {
+    el.textContent = el.dataset.orig;
+    el.classList.remove('broken','active');
+  });
+  document.getElementById(panelId).innerHTML =
+    '<p class="panel-empty">Pick any highlighted field on the left.</p>';
+}
+document.getElementById('resetSaml').addEventListener('click', () => repairAll('samlDoc','samlPanel'));
+document.getElementById('resetOidc').addEventListener('click', () => repairAll('oidcDoc','oidcPanel'));
+
+/* ---------- config quiz ---------- */
+const configs = [
+  {
+    label:'Connection A',
+    app:'Expense Portal',
+    lines:[
+      'Protocol                 SAML 2.0',
+      'Signing cert             CN=idp.fiserv.example',
+      'Cert expiry              2027-03-11',
+      'ACS URL                  https://expenses.../acs',
+      'Audience (Entity ID)     https://expenses.fiserv.example',
+      'Sign assertion           true',
+      'Sign response            false',
+      'Require signed AuthnRequest  true',
+      'Allow IdP initiated SSO      false',
+      'Assertion lifetime       5 min',
+      'NameID format            persistent'
+    ],
+    bad:false,
+    verdict:'Fine. Signing the assertion and not the response is a normal and defensible choice, because the assertion is the part that carries the claims. Everything else is tight.'
+  },
+  {
+    label:'Connection B',
+    app:'Vendor Analytics',
+    lines:[
+      'Protocol                 SAML 2.0',
+      'Signing cert             CN=idp.fiserv.example',
+      'Cert expiry              2027-03-11',
+      'ACS URL                  https://analytics.../acs',
+      'Audience (Entity ID)     https://analytics.fiserv.example',
+      'Sign assertion           true',
+      'Sign response            true',
+      'Require signed AuthnRequest  false',
+      'Allow IdP initiated SSO      true',
+      'Assertion lifetime       8 hrs',
+      'NameID format            emailAddress'
+    ],
+    bad:true,
+    verdict:'This is the one. No single setting here is fatal. The combination is. IdP initiated SSO is on, so there is no InResponseTo to bind against and no request to sign, which is why the signed AuthnRequest setting is off and looks harmless. The assertion is then valid for eight hours, so anything captured stays live all day. And NameID is emailAddress, so identity rests on a mutable attribute. Long lived bearer token, no request binding, mutable subject. An assertion pulled from a proxy log at 9am works at 4pm, and if email is user editable anywhere upstream, it works as whoever the attacker names.'
+  },
+  {
+    label:'Connection C',
+    app:'Treasury Console',
+    lines:[
+      'Protocol                 SAML 2.0',
+      'Signing cert             CN=idp.fiserv.example',
+      'Cert expiry              2026-08-02',
+      'ACS URL                  https://treasury.../acs',
+      'Audience (Entity ID)     https://treasury.fiserv.example',
+      'Sign assertion           true',
+      'Sign response            true',
+      'Require signed AuthnRequest  true',
+      'Allow IdP initiated SSO      false',
+      'Assertion lifetime       3 min',
+      'NameID format            persistent'
+    ],
+    bad:false,
+    verdict:'Secure, and about to page someone. The certificate expires in seventeen days. Not the answer to this exercise, but if the room spots it, that is the better catch, because outages from silent cert expiry cost more hours than most incidents.'
+  }
+];
+
+const grid = document.getElementById('cfgGrid');
+configs.forEach(c => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="card-head">
+      <div>
+        <div class="eyebrow">${c.label}</div>
+        <div style="font-size:14px;margin-top:2px">${c.app}</div>
+      </div>
+    </div>
+    <div class="card-body"><pre class="doc">${c.lines.join('\n')}</pre></div>
+    <div class="result"><strong style="color:${c.bad?'var(--seal)':'var(--verify)'}">${c.bad?'Exploitable':'Not the flaw'}</strong><br>${c.verdict}</div>`;
+  card.addEventListener('click', () => {
+    card.classList.add('revealed', c.bad ? 'reveal-bad' : 'reveal-ok');
+  });
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IAM Animated Protocol Diagrams</title>
+<style>
+:root{
+  --ink:#0F1620;--panel:#17202B;--panel-2:#1E2938;--line:#2C3A4B;
+  --parchment:#E8E4DA;--muted:#8A94A3;--steel:#6E9CC4;--seal:#C2413A;
+  --amber:#D4A03C;--verify:#4E9A8F;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  --sans:ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--ink);color:var(--parchment);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+header{border-bottom:1px solid var(--line);padding:22px 28px 0}
+.title{font-size:26px;font-weight:650;letter-spacing:-.02em;margin:6px 0 2px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 18px;max-width:70ch}
+nav{display:flex;gap:2px;flex-wrap:wrap}
+.tab{
+  background:none;border:1px solid var(--line);border-bottom:none;color:var(--muted);
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  padding:10px 16px;cursor:pointer;border-radius:3px 3px 0 0;transform:translateY(1px);
+}
+.tab:hover{color:var(--parchment)}
+.tab[aria-selected="true"]{background:var(--panel);color:var(--parchment);border-color:var(--line);box-shadow:inset 0 2px 0 var(--steel)}
+.tab:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+main{padding:24px 28px 60px;max-width:1440px}
+.hidden{display:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:4px}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.card-body{padding:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button.act{
+  background:transparent;border:1px solid var(--steel);color:var(--steel);
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  padding:7px 13px;border-radius:3px;cursor:pointer;
+}
+button.act:hover{background:rgba(110,156,196,.14)}
+button.act:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.ctr{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:4px}
+code.inl{font-family:var(--mono);font-size:12px;background:var(--panel-2);border:1px solid var(--line);padding:1px 5px;border-radius:2px;color:#C9D2DD}
+
+/* ---- sequence layout ---- */
+.seq-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start}
+@media(max-width:960px){.seq-grid{grid-template-columns:1fr}}
+.seq-scroll{overflow-x:auto}
+.seq-svg{display:block;min-width:560px}
+.seq-svg text{font-family:var(--mono)}
+.panel-empty{color:var(--muted);font-size:13.5px;padding:4px 0}
+.step-no{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:5px}
+.step-ep{font-size:14px;font-weight:600;color:var(--parchment);margin-bottom:10px;line-height:1.45}
+.step-carry{font-size:13px;color:#C9D2DD;line-height:1.65}
+
+/* ---- legend ---- */
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 0}
+.legend span{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.legend span:before{content:"";display:inline-block;height:2px;width:22px;border-radius:1px}
+.legend .lf:before{background:var(--steel)}
+.legend .lb:before{background:var(--verify)}
+.legend .lw:before{background:var(--amber)}
+.legend .ls:before{width:10px;height:10px;border-radius:50%;background:var(--muted)}
+
+/* ---- note box ---- */
+.note{margin-top:20px;border:1px solid var(--line);border-left:2px solid var(--amber);border-radius:3px;background:rgba(212,160,60,.05);padding:14px 16px}
+.note .eyebrow{color:var(--amber)}
+.note p{margin:8px 0 0;font-size:13.5px;color:#C9D2DD;max-width:90ch}
+h3.sec{font-size:15px;font-weight:600;margin:28px 0 14px;display:flex;align-items:center;gap:12px}
+h3.sec:after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ---- JWT anatomy ---- */
+.jwt-raw{font-family:var(--mono);font-size:12.5px;word-break:break-all;line-height:1.9;padding:14px 16px;background:var(--panel-2);border-radius:3px;border:1px solid var(--line);margin-bottom:20px;cursor:default}
+.jh{color:#E07070}.jp{color:#9B7FD4}.js{color:var(--verify)}.jd{color:var(--muted)}
+.jwt-parts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.jwt-parts{grid-template-columns:1fr}}
+.jwt-part{border:1px solid var(--line);border-radius:4px;overflow:hidden;opacity:.25;transition:opacity .4s,border-color .4s}
+.jwt-part.lit{opacity:1}
+.jwt-part.lh{border-color:#E07070}.jwt-part.lp{border-color:#9B7FD4}.jwt-part.ls{border-color:var(--verify)}
+.jwt-ph{padding:8px 12px;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase}
+.jwt-ph.h{background:rgba(224,112,112,.12);color:#E07070}
+.jwt-ph.p{background:rgba(155,127,212,.12);color:#9B7FD4}
+.jwt-ph.s{background:rgba(78,154,143,.12);color:var(--verify)}
+.jwt-pb{padding:10px 12px}
+.jclaim{display:flex;flex-direction:column;padding:5px 0;border-bottom:1px solid var(--line)}
+.jclaim:last-child{border-bottom:none}
+.jclaim-kv{display:flex;gap:8px}
+.jclaim-k{font-family:var(--mono);font-size:11.5px;color:var(--steel);flex-shrink:0;min-width:56px}
+.jclaim-v{font-family:var(--mono);font-size:11.5px;color:var(--parchment)}
+.jclaim-d{font-size:11px;color:var(--muted);margin-top:2px}
+.jwt-ctrl{display:flex;gap:8px;margin-bottom:16px}
+
+/* ---- SCIM hub ---- */
+.scim-stage{position:relative;height:360px;overflow:hidden;background:var(--panel-2);border-radius:4px}
+.scim-svg-bg{position:absolute;inset:0;width:100%;height:100%}
+.scim-node{
+  position:absolute;transform:translate(-50%,-50%);
+  background:var(--panel-2);border:1px solid var(--line);border-radius:4px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;text-align:center;padding:8px 10px;
+  transition:border-color .4s,background .4s,opacity .4s;z-index:10;
+}
+.scim-node .ico{font-size:18px;margin-bottom:3px}
+.scim-node.hub{width:110px;height:70px;border-color:var(--steel);background:rgba(110,156,196,.10);font-size:13px}
+.scim-node.app{width:80px;height:56px}
+.scim-node.provisioned{border-color:var(--verify);background:rgba(78,154,143,.12)}
+.scim-node.deprovisioned{border-color:var(--seal);background:rgba(194,65,58,.10);opacity:.4}
+.scim-node.updated{border-color:var(--amber);background:rgba(212,160,60,.10)}
+.scim-status{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin:12px 0 0;min-height:20px}
+.scim-ctrl{display:flex;gap:8px;margin-top:12px}
+
+/* ---- OAuth mini flows ---- */
+.grant-tabs{display:flex;gap:2px;margin-bottom:16px}
+.grant-tab{
+  background:none;border:1px solid var(--line);color:var(--muted);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  padding:8px 14px;cursor:pointer;border-radius:3px;
+}
+.grant-tab:hover{color:var(--parchment)}
+.grant-tab.active{background:var(--panel-2);color:var(--parchment);border-color:var(--steel);box-shadow:inset 0 2px 0 var(--steel)}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">IAM Lab &middot; Visual Learning</div>
+  <h1 class="title">Animated Protocol Diagrams</h1>
+  <p class="sub">Step or play through every major IAM protocol flow. Watch which party holds what, which channel carries each message, and where the trust decisions happen.</p>
+  <nav role="tablist">
+    <button class="tab" role="tab" aria-selected="true"  data-tab="saml">01 SAML SSO</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="oidc">02 OIDC + PKCE</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="kerb">03 Kerberos</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="pam">04 PAM Session</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="radius">05 RADIUS</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="scim">06 SCIM</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="jwt">07 JWT Anatomy</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="grants">08 OAuth Grants</button>
+  </nav>
+</header>
+<main>
+
+<!-- ===== SAML ===== -->
+<section id="tab-saml">
+  <div class="card">
+    <div class="card-head">
+      <div><div class="eyebrow">SAML 2.0 &middot; SP-initiated SSO &middot; POST binding</div></div>
+      <div class="row">
+        <button class="act" id="saml-play">Play</button>
+        <button class="act" id="saml-step">Step</button>
+        <button class="act" id="saml-reset">Reset</button>
+        <span class="ctr" id="saml-ctr">0 / 8</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="seq-grid">
+        <div><div class="seq-scroll"><svg id="saml-svg" class="seq-svg"></svg></div>
+          <div class="legend"><span class="lf">front channel (browser)</span><span class="lb">back channel</span><span class="ls">local processing</span></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="eyebrow">Message detail</div></div>
+          <div class="card-body" id="saml-panel"><p class="panel-empty">Press Play or Step to begin.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note">
+    <div class="eyebrow">The one thing to remember</div>
+    <p>Every single message touches the Browser lifeline. The SP and IdP never open a direct connection. Every byte of trust travels through the browser — which is fully under the attacker's control. That is why the assertion must be signed, time-bounded, audience-restricted, and bound to the original request. Each field in a SAML assertion exists because of this one structural fact.</p>
+  </div>
+</section>
+
+<!-- ===== OIDC ===== -->
+<section id="tab-oidc" class="hidden">
+  <div class="card">
+    <div class="card-head">
+      <div><div class="eyebrow">OIDC &middot; Authorization Code + PKCE &middot; Microsoft Entra ID</div></div>
+      <div class="row">
+        <button class="act" id="oidc-play">Play</button>
+        <button class="act" id="oidc-step">Step</button>
+        <button class="act" id="oidc-reset">Reset</button>
+        <span class="ctr" id="oidc-ctr">0 / 9</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="seq-grid">
+        <div><div class="seq-scroll"><svg id="oidc-svg" class="seq-svg"></svg></div>
+          <div class="legend"><span class="lf">front channel</span><span class="lb">back channel (green = tokens never touch browser)</span><span class="ls">local</span></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="eyebrow">Message detail</div></div>
+          <div class="card-body" id="oidc-panel"><p class="panel-empty">Press Play or Step to begin.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note">
+    <div class="eyebrow">The structural difference from SAML</div>
+    <p>Watch steps 6 and 7 — they are green, back-channel only. The tokens never cross the browser. SAML solved the hostile-channel problem by hardening the document (signatures, audience restrictions, time windows). OIDC solved it by refusing to use the hostile channel for tokens at all. Both approaches work; they just distribute the complexity differently.</p>
+  </div>
+</section>
+
+<!-- ===== KERBEROS ===== -->
+<section id="tab-kerb" class="hidden">
+  <div class="card">
+    <div class="card-head">
+      <div><div class="eyebrow">Kerberos &middot; TGT exchange &middot; Active Directory</div></div>
+      <div class="row">
+        <button class="act" id="kerb-play">Play</button>
+        <button class="act" id="kerb-step">Step</button>
+        <button class="act" id="kerb-reset">Reset</button>
+        <span class="ctr" id="kerb-ctr">0 / 6</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="seq-grid">
+        <div><div class="seq-scroll"><svg id="kerb-svg" class="seq-svg"></svg></div>
+          <div class="legend"><span class="lf">AS exchange (get TGT)</span><span class="lb">TGS exchange (get service ticket)</span><span class="lw">AP exchange (use ticket)</span><span class="ls">local</span></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="eyebrow">Message detail</div></div>
+          <div class="card-body" id="kerb-panel"><p class="panel-empty">Press Play or Step to begin.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note">
+    <div class="eyebrow">Watch the KDC lifeline go silent after step 4</div>
+    <p>The KDC is not involved in the actual service session. All trust was baked into the ticket at issuance. This makes Kerberos highly scalable — no KDC round-trip per resource access — but creates its revocation weakness: a ticket issued before an account is disabled remains valid until it expires. Ticket lifetime (default 10 hours in AD) is therefore a security control, not just a performance tuning parameter.</p>
+  </div>
+</section>
+
+<!-- ===== PAM ===== -->
+<section id="tab-pam" class="hidden">
+  <div class="card">
+    <div class="card-head">
+      <div><div class="eyebrow">Privileged Access Management &middot; JIT session lifecycle</div></div>
+      <div class="row">
+        <button class="act" id="pam-play">Play</button>
+        <button class="act" id="pam-step">Step</button>
+        <button class="act" id="pam-reset">Reset</button>
+        <span class="ctr" id="pam-ctr">0 / 8</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="seq-grid">
+        <div><div class="seq-scroll"><svg id="pam-svg" class="seq-svg"></svg></div>
+          <div class="legend"><span class="lf">request &amp; approval flow</span><span class="lb">session &amp; audit</span><span class="ls">automated</span></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="eyebrow">Step detail</div></div>
+          <div class="card-body" id="pam-panel"><p class="panel-empty">Press Play or Step to begin.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note">
+    <div class="eyebrow">The key property</div>
+    <p>The engineer never sees the credential. The vault brokers access and the credential rotates when the session closes. A stolen session token is time-limited. A stolen standing password is not. The audit log captures keystrokes tied to the engineer's identity — not to the shared privileged account — which is what makes post-incident forensics possible.</p>
+  </div>
+</section>
+
+<!-- ===== RADIUS ===== -->
+<section id="tab-radius" class="hidden">
+  <div class="card">
+    <div class="card-head">
+      <div><div class="eyebrow">RADIUS &middot; 802.1X network access control &middot; AAA</div></div>
+      <div class="row">
+        <button class="act" id="radius-play">Play</button>
+        <button class="act" id="radius-step">Step</button>
+        <button class="act" id="radius-reset">Reset</button>
+        <span class="ctr" id="radius-ctr">0 / 8</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="seq-grid">
+        <div><div class="seq-scroll"><svg id="radius-svg" class="seq-svg"></svg></div>
+          <div class="legend"><span class="lf">EAP / 802.1X</span><span class="lb">RADIUS (UDP)</span><span class="lw">Accounting</span><span class="ls">directory lookup</span></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="eyebrow">Step detail</div></div>
+          <div class="card-body" id="radius-panel"><p class="panel-empty">Press Play or Step to begin.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note">
+    <div class="eyebrow">Why RADIUS is still everywhere</div>
+    <p>RADIUS dates to 1991. It uses UDP, MD5-based message authentication, and a shared secret between the NAS and server. It is not impressive by modern cryptographic standards. It is also implemented in virtually every managed switch, VPN appliance, and wireless controller on earth, which means any enterprise network policy still routes through it regardless of what sits in front. Understanding RADIUS means understanding why zero-trust network access policies still need a RADIUS-compatible back-end.</p>
+  </div>
+</section>
+
+<!-- ===== SCIM ===== -->
+<section id="tab-scim" class="hidden">
+  <h3 class="sec">SCIM &middot; Identity Provisioning Hub</h3>
+  <div class="card">
+    <div class="card-head">
+      <div><div class="eyebrow">System for Cross-domain Identity Management &middot; RFC 7643/7644</div></div>
+    </div>
+    <div class="card-body">
+      <div class="scim-stage" id="scimStage">
+        <svg class="scim-svg-bg" id="scimSvg"></svg>
+      </div>
+      <div class="scim-status" id="scimStatus">Choose an event below to see how the IdP pushes lifecycle changes to connected apps.</div>
+      <div class="scim-ctrl">
+        <button class="act" id="scim-join">&#x2795; Employee Joins</button>
+        <button class="act" id="scim-move">&#x21C4; Employee Changes Role</button>
+        <button class="act" id="scim-leave">&#x2716; Employee Leaves</button>
+        <button class="act" id="scim-reset">Reset</button>
+      </div>
+    </div>
+  </div>
+  <div class="note">
+    <div class="eyebrow">SCIM vs SSO — different problems</div>
+    <p>SSO (SAML or OIDC) handles the moment of login — the user authenticates once and the assertion carries them across apps. SCIM handles account existence — it creates, updates, and removes the account so there is something to log into. Without SCIM, SSO relies on just-in-time provisioning (creating a bare account on first login) or manual admin work for every app. Without SSO, SCIM gives every app a correctly populated account but still needs its own login page. Both together is the baseline for modern enterprise identity.</p>
+  </div>
+</section>
+
+<!-- ===== JWT ===== -->
+<section id="tab-jwt" class="hidden">
+  <h3 class="sec">JWT &middot; Structure, Claims, and Signing</h3>
+  <div class="card">
+    <div class="card-head">
+      <div><div class="eyebrow">JSON Web Token &middot; RFC 7519 &middot; header.payload.signature</div></div>
+    </div>
+    <div class="card-body">
+      <div class="jwt-ctrl">
+        <button class="act" id="jwt-h">Decode Header</button>
+        <button class="act" id="jwt-p">Decode Payload</button>
+        <button class="act" id="jwt-s">Verify Signature</button>
+        <button class="act" id="jwt-reset">Reset</button>
+      </div>
+      <div class="jwt-raw" id="jwtRaw">
+        <span class="jh" id="jwtH">eyJhbGciOiJSUzI1NiIsImtpZCI6InBGOS0ybVF4SzcifQ</span><span class="jd">.</span><span class="jp" id="jwtP">eyJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vN2ExZS4uLi92Mi4wIiwiYXVkIjoiNGM5ZDFmN2UtdHJlYXN1cnktd2ViIiwic3ViIjoiYTdmM2U5MWMtNGQyMiIsIm5vbmNlIjoibi0wUzZfV3pBMk1qIiwiZXhwIjoxNzg0Mjg1MDQwLCJpYXQiOjE3ODQyODE0NDB9</span><span class="jd">.</span><span class="js" id="jwtS">QmluZFRoaXNUb1RoZVJlcXVlc3RPckl0SXNKdXN0QUJlYXJlcg</span>
+      </div>
+      <div class="jwt-parts">
+        <div class="jwt-part" id="jpH">
+          <div class="jwt-ph h">Header &middot; algorithm &amp; key id</div>
+          <div class="jwt-pb">
+            <div class="jclaim"><div class="jclaim-kv"><span class="jclaim-k">"alg"</span><span class="jclaim-v">"RS256"</span></div><div class="jclaim-d">Signing algorithm. Pin this in code — never trust what the token says here. <code class="inl">none</code> and <code class="inl">HS256</code> algorithm confusion are the two classic attacks.</div></div>
+            <div class="jclaim"><div class="jclaim-kv"><span class="jclaim-k">"kid"</span><span class="jclaim-v">"pF9-2mQxK7"</span></div><div class="jclaim-d">Key ID. Used to select the right public key from the JWKS endpoint. Treat as opaque — never use it to build file paths (path traversal) or SQL (injection).</div></div>
+            <div class="jclaim"><div class="jclaim-kv"><span class="jclaim-k">"typ"</span><span class="jclaim-v">"JWT"</span></div><div class="jclaim-d">Token type. Informational only.</div></div>
+          </div>
+        </div>
+        <div class="jwt-part" id="jpP">
+          <div class="jwt-ph p">Payload &middot; claims</div>
+          <div class="jwt-pb">
+            <div class="jclaim"><div class="jclaim-kv"><span class="jclaim-k">"iss"</span><span class="jclaim-v">"https://login.microsoft&hellip;"</span></div><div class="jclaim-d">Issuer. Exact string match required. In multi-tenant Entra, also check <code class="inl">tid</code> — signature-valid tokens from any tenant will match without it.</div></div>
+            <div class="jclaim"><div class="jclaim-kv"><span class="jclaim-k">"aud"</span><span class="jclaim-v">"4c9d1f7e-treasury-web"</span></div><div class="jclaim-d">Audience — must be your client_id. Cross-app token replay exploits a missing aud check.</div></div>
+            <div class="jclaim"><div class="jclaim-kv"><span class="jclaim-k">"sub"</span><span class="jclaim-v">"a7f3e91c-4d22"</span></div><div class="jclaim-d">Subject. The account key is <em>iss + sub</em> together, never sub alone across issuers.</div></div>
+            <div class="jclaim"><div class="jclaim-kv"><span class="jclaim-k">"nonce"</span><span class="jclaim-v">"n-0S6_WzA2Mj"</span></div><div class="jclaim-d">Replay protection. Generated per-request, stored server-side, compared once, consumed. Not the same as <code class="inl">state</code> (which protects the redirect, not the token).</div></div>
+            <div class="jclaim"><div class="jclaim-kv"><span class="jclaim-k">"exp"</span><span class="jclaim-v">1784285040</span></div><div class="jclaim-d">Expiry epoch. Also check <code class="inl">auth_time</code> for sensitive operations — <code class="inl">exp</code> only tells you the token is fresh, not that the human recently authenticated.</div></div>
+          </div>
+        </div>
+        <div class="jwt-part" id="jpS">
+          <div class="jwt-ph s">Signature &middot; proof of integrity</div>
+          <div class="jwt-pb">
+            <div class="jclaim"><div class="jclaim-kv"><span class="jclaim-k">input</span><span class="jclaim-v">BASE64URL(header) + "." + BASE64URL(payload)</span></div><div class="jclaim-d">The signature covers exactly these two sections. Changing any byte in header or payload invalidates the signature.</div></div>
+            <div class="jclaim"><div class="jclaim-kv"><span class="jclaim-k">signed with</span><span class="jclaim-v">IdP's RSA private key</span></div><div class="jclaim-d">Only the IdP holds the private key. Anyone can verify using the public key from the JWKS endpoint.</div></div>
+            <div class="jclaim"><div class="jclaim-kv"><span class="jclaim-k">verify with</span><span class="jclaim-v">JWKS public key matching kid</span></div><div class="jclaim-d">Fetch from <code class="inl">/.well-known/openid-configuration</code> → <code class="inl">jwks_uri</code>. Cache aggressively. Only refetch on unknown kid. Rate-limit refetches — they are a DoS vector.</div></div>
+            <div class="jclaim" style="border-bottom:none;margin-top:6px;padding-top:6px;border-top:1px solid var(--line)"><div class="jclaim-kv"><span class="jclaim-k" style="color:var(--seal)">key rule</span><span class="jclaim-v" style="color:#E08A85">signature valid ≠ safe to trust</span></div><div class="jclaim-d">A valid signature only proves the IdP signed it. You still must check iss, aud, nonce, exp. The signature is the first check, not the only one.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== OAUTH GRANTS ===== -->
+<section id="tab-grants" class="hidden">
+  <h3 class="sec">OAuth 2.0 &middot; Grant Types</h3>
+  <div class="grant-tabs">
+    <button class="grant-tab active" data-grant="pkce">Auth Code + PKCE</button>
+    <button class="grant-tab" data-grant="cc">Client Credentials</button>
+    <button class="grant-tab" data-grant="device">Device Code</button>
+  </div>
+  <div class="card">
+    <div class="card-head">
+      <div class="eyebrow" id="grant-eyebrow">Authorization Code + PKCE &middot; browser &amp; mobile apps</div>
+      <div class="row">
+        <button class="act" id="grant-play">Play</button>
+        <button class="act" id="grant-step">Step</button>
+        <button class="act" id="grant-reset">Reset</button>
+        <span class="ctr" id="grant-ctr">0 / 7</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="seq-grid">
+        <div><div class="seq-scroll"><svg id="grant-svg" class="seq-svg"></svg></div>
+          <div class="legend"><span class="lf">front channel (browser)</span><span class="lb">back channel</span></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="eyebrow">Step detail</div></div>
+          <div class="card-body" id="grant-panel"><p class="panel-empty">Press Play or Step to begin.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note">
+    <div class="eyebrow" id="grant-note-head">Why not the implicit grant?</div>
+    <p id="grant-note-body">The implicit grant returned the access token directly in the redirect URL fragment — visible in browser history, referrer headers, and server logs. PKCE solves the same problem (no client secret) without the exposure. The implicit grant is deprecated. If you see it in a codebase, it is a migration task.</p>
+  </div>
+</section>
+
+</main>
+<script>
+/* ============================================================
+   SHARED SEQUENCE ENGINE
+   ============================================================ */
+const NS = 'http://www.w3.org/2000/svg';
+function se(tag, attrs, txt){
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(txt != null) e.textContent = txt;
+  return e;
+}
+function plain(h){ const d = document.createElement('div'); d.innerHTML = h; return d.textContent; }
+function clip(t, n){ return t.length > n ? t.slice(0,n-1)+'…' : t; }
+const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+class SeqDiagram {
+  constructor(svgId, panelId, ctrId, actors, steps){
+    this.svg   = document.getElementById(svgId);
+    this.panel = document.getElementById(panelId);
+    this.ctr   = document.getElementById(ctrId);
+    this.actors = actors;
+    this.steps  = steps;
+    this.els    = [];
+    this.cursor = -1;
+    this.playing = false;
+    this.raf    = null;
+    this.total  = steps.length;
+  }
+
+  laneX(){
+    const n = this.actors.length;
+    const W = 820, m = n === 2 ? 200 : 100;
+    const gap = (W - 2*m) / (n-1);
+    return Array.from({length:n}, (_,i) => m + i*gap);
+  }
+
+  build(){
+    const X = this.laneX();
+    const TOP = 94, GAP = 80, SD = 32;
+    const H = TOP + this.steps.length * GAP + 50;
+    const sid = this.svg.id;
+
+    this.svg.setAttribute('viewBox', `0 0 840 ${H}`);
+    this.svg.setAttribute('width','100%');
+    this.svg.innerHTML = '';
+    this.els = [];
+
+    // arrowhead markers
+    const defs = se('defs');
+    ['steel','verify','amber','muted','seal'].forEach(c => {
+      const mk = se('marker',{id:`ah-${c}-${sid}`,viewBox:'0 0 10 10',refX:'9',refY:'5',markerWidth:'7',markerHeight:'7',orient:'auto-start-reverse'});
+      mk.appendChild(se('path',{d:'M0,0 L10,5 L0,10 z',fill:`var(--${c})`}));
+      defs.appendChild(mk);
+    });
+    this.svg.appendChild(defs);
+
+    // lifelines
+    this.actors.forEach((a,i) => {
+      this.svg.appendChild(se('line',{
+        x1:X[i], y1:66, x2:X[i], y2:TOP+this.steps.length*GAP+20,
+        stroke:'var(--line)', 'stroke-width':1.5, 'stroke-dasharray':'5 6'
+      }));
+    });
+
+    // actor boxes
+    this.actors.forEach((a,i) => {
+      const bw = 170, bh = 48;
+      const g = se('g');
+      g.appendChild(se('rect',{x:X[i]-bw/2, y:10, width:bw, height:bh, rx:4, fill:'var(--panel-2)', stroke:a.accent||'var(--line)'}));
+      g.appendChild(se('text',{x:X[i], y:31, 'text-anchor':'middle', 'font-size':'13', 'font-weight':'600', fill:'var(--parchment)', 'font-family':'var(--sans)'}, a.who));
+      g.appendChild(se('text',{x:X[i], y:47, 'text-anchor':'middle', 'font-size':'9.5', fill:'var(--muted)', 'font-family':'var(--mono)'}, a.what));
+      this.svg.appendChild(g);
+    });
+
+    // messages
+    this.steps.forEach((s,idx) => {
+      const y = TOP + idx*GAP;
+      const col = s.back ? 'verify' : s.warn ? 'amber' : 'steel';
+      const g = se('g',{opacity:'0'});
+
+      if(s.self){
+        const x = X[s.from];
+        const path = se('path',{d:`M${x},${y} h58 v${SD} h-52`, fill:'none', stroke:`var(--${col})`, 'stroke-width':1.6, 'marker-end':`url(#ah-${col}-${sid})`,'data-col':col});
+        g.appendChild(path);
+        g.appendChild(se('text',{x:x+66, y:y+SD/2+4, 'font-size':'9', fill:'var(--parchment)', 'font-family':'var(--mono)'}, clip(plain(s.ep),36)));
+        g.appendChild(se('text',{x:6, y:y+4, 'font-size':'9', fill:'var(--muted)', 'font-family':'var(--mono)','letter-spacing':'.12em'}, String(idx+1).padStart(2,'0')));
+        this.svg.appendChild(g);
+        this.els.push({g, path:null, dot:null, s, y, col});
+        return;
+      }
+
+      const x1 = X[s.from], x2 = X[s.to], dir = x2>x1?1:-1;
+      const path = se('path',{d:`M${x1},${y} L${x2-dir*5},${y}`, fill:'none', stroke:`var(--${col})`, 'stroke-width':1.6, 'data-col':col});
+      const mid = (x1+x2)/2;
+      g.appendChild(se('text',{x:mid, y:y-8, 'text-anchor':'middle', 'font-size':'9.5', fill:'var(--parchment)', 'font-family':'var(--mono)'}, clip(plain(s.ep),52)));
+      if(s.back) g.appendChild(se('text',{x:mid, y:y+15, 'text-anchor':'middle', 'font-size':'8', fill:'var(--verify)', 'font-family':'var(--mono)','letter-spacing':'.08em'}, 'back channel'));
+      g.insertBefore(path, g.firstChild);
+      const dot = se('circle',{r:5, cx:x1, cy:y, fill:`var(--${col})`, opacity:'0'});
+      g.appendChild(dot);
+      g.appendChild(se('text',{x:6, y:y+4, 'font-size':'9', fill:'var(--muted)', 'font-family':'var(--mono)','letter-spacing':'.12em'}, String(idx+1).padStart(2,'0')));
+      this.svg.appendChild(g);
+      this.els.push({g, path, dot, s, y, col});
+    });
+
+    this.cursor = -1;
+    this.updateCtr();
+    this.panel.innerHTML = '<p class="panel-empty">Press Play or Step to begin.</p>';
+  }
+
+  updateCtr(){ if(this.ctr) this.ctr.textContent = `${Math.max(0,this.cursor+1)} / ${this.total}`; }
+
+  showPanel(s, col){
+    this.panel.innerHTML = `
+      <div class="step-no" style="color:var(--${col})">Step ${String(this.cursor+1).padStart(2,'0')} ${s.back?'· BACK CHANNEL':''} ${s.self?'· LOCAL':''}</div>
+      <div class="step-ep">${s.ep}</div>
+      <div class="step-carry">${s.carry}</div>`;
+  }
+
+  advance(cb){
+    if(this.cursor >= this.els.length-1){ cb&&cb(true); return; }
+    this.cursor++;
+    const el = this.els[this.cursor];
+    this.els.forEach((o,i) => o.g.setAttribute('opacity', i<=this.cursor?'1':'0'));
+    this.updateCtr();
+    this.showPanel(el.s, el.col);
+
+    if(!el.path || reduce){ cb&&cb(false); return; }
+
+    el.path.removeAttribute('marker-end');
+    const total = el.path.getTotalLength();
+    el.path.style.strokeDasharray = total;
+    el.path.style.strokeDashoffset = total;
+    if(el.dot) el.dot.setAttribute('opacity','1');
+    const dur = 680, t0 = performance.now();
+    cancelAnimationFrame(this.raf);
+    const frame = t => {
+      const p = Math.min(1,(t-t0)/dur);
+      const e = p<.5?2*p*p:-1+(4-2*p)*p;
+      el.path.style.strokeDashoffset = total*(1-e);
+      if(el.dot){ const pt = el.path.getPointAtLength(total*e); el.dot.setAttribute('cx',pt.x); el.dot.setAttribute('cy',pt.y); }
+      if(p<1) this.raf = requestAnimationFrame(frame);
+      else {
+        if(el.dot) el.dot.setAttribute('opacity','0');
+        el.path.setAttribute('marker-end',`url(#ah-${el.path.getAttribute('data-col')}-${this.svg.id})`);
+        cb&&cb(false);
+      }
+    };
+    this.raf = requestAnimationFrame(frame);
+  }
+
+  play(btn){
+    if(this.playing){ this.playing=false; cancelAnimationFrame(this.raf); btn.textContent='Play'; return; }
+    if(this.cursor>=this.els.length-1) this.build();
+    this.playing=true; btn.textContent='Pause';
+    const next = () => {
+      if(!this.playing) return;
+      this.advance(done=>{
+        if(done||!this.playing){ this.playing=false; btn.textContent='Replay'; return; }
+        setTimeout(next,1350);
+      });
+    };
+    next();
+  }
+
+  step(){ if(this.cursor>=this.els.length-1) this.build(); this.advance(); }
+  reset(btn){ this.playing=false; cancelAnimationFrame(this.raf); if(btn) btn.textContent='Play'; this.build(); }
+}
+
+/* ============================================================
+   PROTOCOL DATA
+   ============================================================ */
+
+/* ----- SAML ----- */
+const samlActors = [
+  {who:'Browser',          what:'user agent',          accent:'var(--line)'},
+  {who:'Service Provider', what:'treasury.fiserv.example', accent:'var(--steel)'},
+  {who:'Identity Provider',what:'PingFederate',         accent:'var(--amber)'}
+];
+const samlSteps = [
+  {from:0,to:1, ep:'GET /dashboard',
+   carry:'No session cookie exists. The SP receives an unauthenticated request and must initiate the SAML flow. Everything that follows exists only because of this missing cookie.'},
+  {from:1,to:0, ep:'302 → /idp/SSO.saml2?SAMLRequest=…&RelayState=/dashboard',
+   carry:'The SP builds an AuthnRequest XML, deflates and base64-encodes it, signs the query string with its private key, and appends RelayState. It stores the request ID <code class="inl">_req-6b1e9d</code> server-side. That stored ID is the entire basis of the InResponseTo check later.'},
+  {from:0,to:2, ep:'GET /idp/SSO.saml2?SAMLRequest=…',
+   carry:'The browser carries the request to PingFederate. PF verifies the request signature against the SP connection certificate, resolves the SP connection by Issuer, and evaluates which authentication policy applies.'},
+  {from:2,to:2, self:true, ep:'Session check → MFA policy → authenticate',
+   carry:'Existing PF session cookie? Reuse it — no prompt — and <strong>auth_time stays old</strong>. No session: password prompt, MFA evaluation, set session cookie on idp.fiserv.example. The AuthnContextClassRef written into the assertion is decided here.'},
+  {from:2,to:0, ep:'200 OK · text/html · auto-submitting POST form',
+   carry:'POST binding. Not a redirect. A hidden HTML form with an onload submit, because the SAMLResponse is too large for a URL. Body carries SAMLResponse (base64) and RelayState echoed back. The browser is about to deliver a signed credential it cannot read.'},
+  {from:0,to:1, ep:'POST /sso/acs · body: SAMLResponse + RelayState',
+   carry:'The signed assertion arrives at the SP in a POST body made by the browser. This is the hop where every attack in a SAML security review happens. The assertion has been in the browser\'s possession the entire time between hops 5 and 6.'},
+  {from:1,to:1, self:true, ep:'Validation chain — in order',
+   carry:'<strong>Signature → Issuer → Destination → InResponseTo → Conditions window → Audience → Recipient → AuthnContext.</strong> Order matters: verify the signature first. Then read claims only from the element you verified, by ID reference. Reject any document with more than one Assertion.'},
+  {from:1,to:0, ep:'302 /dashboard + Set-Cookie: session=…',
+   carry:'The assertion is consumed and discarded. Its only job was to mint a local session cookie. SessionIndex is stored against that cookie so a later LogoutRequest can find it.'}
+];
+
+/* ----- OIDC ----- */
+const oidcActors = [
+  {who:'Browser',          what:'user agent',              accent:'var(--line)'},
+  {who:'Relying Party',    what:'treasury.fiserv.example', accent:'var(--steel)'},
+  {who:'Identity Provider',what:'Microsoft Entra ID',      accent:'var(--amber)'}
+];
+const oidcSteps = [
+  {from:0,to:1, ep:'GET /dashboard',
+   carry:'No session. Identical start to SAML.'},
+  {from:1,to:0, ep:'302 → /authorize?client_id=…&code_challenge=qR7v…&state=xyz&nonce=n1',
+   carry:'RP generates: <code class="inl">state</code> (CSRF protection on redirect), <code class="inl">nonce</code> (replay protection in token), <code class="inl">code_verifier</code> (PKCE secret, never leaves RP). Stores all three. Sends only <code class="inl">code_challenge = BASE64URL(SHA256(verifier))</code>. The verifier itself never crosses the wire.'},
+  {from:0,to:2, ep:'GET /authorize?…',
+   carry:'Entra ID authenticates the user, evaluates Conditional Access policies (device compliance, location, risk), checks for existing session. Same decision point as SAML hop 4, different vocabulary.'},
+  {from:2,to:0, ep:'302 /callback?code=0.AXoA…&state=xyz',
+   carry:'Short-lived, single-use code plus the state echo. <strong>Nothing sensitive has crossed the browser yet.</strong> A stolen code is worthless without the code_verifier the RP holds.'},
+  {from:0,to:1, ep:'GET /callback?code=0.AXoA…&state=xyz',
+   carry:'RP validates <code class="inl">state</code> against its stored copy. This is CSRF protection on the redirect. Not the same as nonce. People confuse them constantly — they protect different layers.'},
+  {from:1,to:2, back:true, ep:'POST /token · code + code_verifier + client_auth',
+   carry:'<strong>Back channel — server to server, direct TLS.</strong> RP sends the code and the verifier. Entra ID recomputes SHA256(verifier) and compares it to the challenge from hop 2. A stolen code fails here because the thief never had the verifier.'},
+  {from:2,to:1, back:true, ep:'200 OK · { id_token, access_token, refresh_token }',
+   carry:'<strong>Tokens never touch the browser.</strong> This is the single structural difference from SAML. SAML moved the signed document through the browser. OIDC keeps tokens on the back channel entirely. The attack surface is fundamentally smaller.'},
+  {from:1,to:1, self:true, ep:'Validate: sig → iss → aud → nonce → exp',
+   carry:'Fetch JWKS by kid (cache it). Verify signature with pinned alg — never accept what the token header says. Exact match on iss (include tenant allowlist for multi-tenant). aud must be your client_id. nonce must match what you sent. exp with minimal clock skew. Then set session cookie.'},
+  {from:1,to:0, ep:'302 /dashboard + Set-Cookie: session=…',
+   carry:'Local session created from validated claims. Tokens are stored server-side only. The browser holds the session cookie, not the token.'}
+];
+
+/* ----- KERBEROS ----- */
+const kerbActors = [
+  {who:'Client',  what:'workstation / user',   accent:'var(--line)'},
+  {who:'KDC',     what:'Key Distribution Center', accent:'var(--steel)'},
+  {who:'Service', what:'file server · SQL · app', accent:'var(--verify)'}
+];
+const kerbSteps = [
+  {from:0,to:1, ep:'AS-REQ → Authentication Service',
+   carry:'Client proves it knows its long-term key (derived from the user\'s password) by encrypting a pre-authentication timestamp. The password is never transmitted. KDC decrypts using its copy of the key and verifies the timestamp is fresh.'},
+  {from:1,to:0, ep:'AS-REP ← KDC · TGT + session key',
+   carry:'Two items back. A <strong>TGT encrypted with the KDC\'s own secret</strong> — the client cannot read inside it, only carry it. A <strong>session key encrypted with the client\'s key</strong> — the client decrypts this to use for TGS communication. The client holds the TGT opaquely.'},
+  {from:0,to:1, warn:true, ep:'TGS-REQ → Ticket Granting Service · TGT + Authenticator + target SPN',
+   carry:'Client presents the TGT (which it cannot read) plus an Authenticator — a timestamp encrypted with the session key from AS-REP. The KDC decrypts the TGT to find the session key, then uses it to verify the Authenticator. This proves freshness and prevents replay without contacting any external store.'},
+  {from:1,to:0, warn:true, ep:'TGS-REP ← KDC · service ticket + client-service session key',
+   carry:'Service ticket encrypted with the <strong>target service\'s long-term key</strong> — only that service can decrypt it. New client-service session key encrypted with the client\'s current session key. The KDC is now done. It will not participate in the actual service session.'},
+  {from:0,to:2, ep:'AP-REQ → Service · service ticket + Authenticator',
+   carry:'Client sends the service ticket and a new Authenticator encrypted with the client-service session key. The service decrypts the ticket with its own long-term key, extracts the session key inside, and uses it to verify the Authenticator. No call to the KDC.'},
+  {from:2,to:2, self:true, ep:'AP-REP (optional mutual auth) → session open',
+   carry:'For mutual authentication, the service sends back an AP-REP signed with the session key, proving it decrypted the ticket correctly. Session is established. <strong>The KDC was never contacted after step 4.</strong> Trust was fully encoded in the tickets at issuance time.'}
+];
+
+/* ----- PAM ----- */
+const pamActors = [
+  {who:'Engineer',    what:'requester',        accent:'var(--line)'},
+  {who:'PAM Platform',what:'CyberArk / BeyondTrust', accent:'var(--steel)'},
+  {who:'Target',      what:'server · database', accent:'var(--amber)'},
+  {who:'Audit Store', what:'SIEM / recording', accent:'var(--verify)'}
+];
+const pamSteps = [
+  {from:0,to:1, ep:'Access request: system + justification + time window',
+   carry:'Engineer submits a request specifying the target system, business justification, and requested duration. PAM creates an approval ticket. No access is granted yet.'},
+  {from:1,to:0, ep:'Approval required — notify approver',
+   carry:'PAM routes the request to the designated approver (manager, change advisory board, or an automated policy engine). Time-bound: approval must come within a window or the request expires.'},
+  {from:0,to:1, ep:'Approval granted',
+   carry:'Approver confirms. PAM records the approval decision with the approver\'s identity and timestamp. An audit trail already exists before a single command is run.'},
+  {from:1,to:1, self:true, ep:'Vault: check out credential / create JIT account',
+   carry:'PAM either checks out a stored credential and rotates it so only this session holds the current value, or creates a just-in-time temporary account on the target scoped to this session only.'},
+  {from:1,to:0, ep:'Session URL · no credential shown to engineer',
+   carry:'Engineer receives a proxied session link. The actual credential never appears in their terminal or browser. They cannot extract it. Every keystroke, file access, and command goes through the PAM proxy.'},
+  {from:0,to:2, back:true, ep:'Privileged session (proxied through PAM)',
+   carry:'All target access runs through the PAM session broker. The engineer connects to PAM, PAM connects to the target. From the target\'s perspective, the connection comes from the PAM appliance.'},
+  {from:1,to:3, back:true, ep:'Session recording + event stream → SIEM',
+   carry:'Every session event — keystrokes, commands, file transfers, screen content — is captured and streamed to the audit store. Tied to the engineer\'s identity, not to the shared privileged account they are using.'},
+  {from:1,to:1, self:true, ep:'Session close → credential rotation',
+   carry:'On session end, PAM rotates the credential automatically. A stolen session token from this session is immediately worthless. The blast radius of any compromise is bounded to the session duration.'}
+];
+
+/* ----- RADIUS ----- */
+const radiusActors = [
+  {who:'Client Device', what:'supplicant',          accent:'var(--line)'},
+  {who:'NAS',           what:'switch / AP / VPN GW', accent:'var(--steel)'},
+  {who:'RADIUS Server', what:'FreeRADIUS / NPS',    accent:'var(--amber)'},
+  {who:'Directory',     what:'Active Directory / LDAP', accent:'var(--verify)'}
+];
+const radiusSteps = [
+  {from:0,to:1, ep:'EAPOL-Start · connect to port',
+   carry:'Device plugs into a managed switch or associates with a corporate SSID. The switch places the port in an unauthenticated state — VLAN 999, quarantine only. 802.1X supplicant on the device initiates the EAP exchange.'},
+  {from:1,to:0, ep:'EAP-Request/Identity',
+   carry:'NAS asks the device to identify itself. The device responds with a username. The NAS does not verify this itself — it will relay everything to the RADIUS server.'},
+  {from:0,to:2, ep:'RADIUS Access-Request · NAS-IP + username + EAP-data',
+   carry:'NAS encapsulates the EAP message in a RADIUS Access-Request and forwards it to the RADIUS server. Authenticator field uses MD5 HMAC with the shared secret between NAS and RADIUS. UDP port 1812.'},
+  {from:2,to:3, self:false, back:true, ep:'LDAP bind + group membership query',
+   carry:'RADIUS server authenticates the user against the directory. For EAP-TLS: certificate validation. For PEAP/MSCHAPv2: credential verification. Then queries group memberships to determine which VLAN and policy to apply.'},
+  {from:3,to:2, back:true, ep:'User attributes + group memberships',
+   carry:'Directory returns user record and group list. RADIUS evaluates policy: which VLAN, session timeout, bandwidth limits, permitted services. Everything the NAS needs to enforce access is computed here.'},
+  {from:2,to:1, ep:'RADIUS Access-Accept · VLAN=10 · Session-Timeout=3600',
+   carry:'Access granted. RADIUS sends back Tunnel-Private-Group-ID (VLAN assignment), Session-Timeout, and any other vendor-specific attributes. The NAS enforces whatever the RADIUS server decided — it has no independent policy.'},
+  {from:1,to:0, ep:'Port open · network access granted to VLAN 10',
+   carry:'NAS moves the port from quarantine VLAN to the authorized VLAN. Device gets DHCP and network access. The entire flow happened before a single application packet was transmitted.'},
+  {from:1,to:2, warn:true, ep:'RADIUS Accounting-Request (Start) · session begin',
+   carry:'NAS sends an Accounting-Start record: who, from where, on which port, at what time. UDP port 1813. When the session ends, an Accounting-Stop record adds bytes transferred and session duration. This is the network access audit trail.'}
+];
+
+/* ----- OAUTH GRANT DATA ----- */
+const grantData = {
+  pkce: {
+    eyebrow:'Authorization Code + PKCE · browser & mobile apps',
+    noteHead:'Why not the implicit grant?',
+    noteBody:'The implicit grant returned the access token directly in the redirect URL fragment — visible in browser history, referrer headers, and server logs. PKCE solves the same problem (no client secret) without the exposure. If you see the implicit grant in a codebase, it is a migration task.',
+    actors:[
+      {who:'Browser',          what:'user agent',          accent:'var(--line)'},
+      {who:'App / RP',         what:'client application',  accent:'var(--steel)'},
+      {who:'Identity Provider',what:'Entra ID / PingFed',  accent:'var(--amber)'}
+    ],
+    steps:[
+      {from:0,to:1, ep:'GET /dashboard — no session',
+       carry:'User requests a protected resource. App has no session cookie.'},
+      {from:1,to:0, ep:'302 → /authorize?code_challenge=SHA256(verifier)&state=s1&nonce=n1',
+       carry:'App generates: code_verifier (random, kept locally), code_challenge = BASE64URL(SHA256(verifier)), state (CSRF), nonce (replay). Stores all three. Only the challenge and state cross the browser.'},
+      {from:0,to:2, ep:'GET /authorize?… — user authenticates + MFA',
+       carry:'IdP handles authentication, MFA, Conditional Access. Stores the code_challenge tied to the code it will issue.'},
+      {from:2,to:0, ep:'302 /callback?code=AUTH_CODE&state=s1',
+       carry:'Short-lived code plus state. The code alone is worthless without the verifier. Nothing sensitive has crossed the browser.'},
+      {from:0,to:1, ep:'GET /callback?code=AUTH_CODE&state=s1',
+       carry:'App validates state against its stored copy (CSRF check). Prepares to exchange the code.'},
+      {from:1,to:2, back:true, ep:'POST /token · code + code_verifier + client_auth',
+       carry:'Back channel only. IdP recomputes SHA256(verifier) and compares to stored challenge. A stolen code fails here — the attacker never held the verifier.'},
+      {from:2,to:1, back:true, ep:'200 · { id_token, access_token, refresh_token }',
+       carry:'Tokens are delivered server-to-server. The browser never sees them. App sets a session cookie and discards the tokens from browser-accessible storage.'}
+    ]
+  },
+  cc: {
+    eyebrow:'Client Credentials Grant · service-to-service, no user',
+    noteHead:'Treat the client secret like a root password',
+    noteBody:'There is no user in this flow. The service authenticates as itself. Compromise of the client_secret gives the attacker all permissions the service holds, permanently, until rotated. Use short-lived certificates where possible. Scope permissions to the minimum required. Rotate on any suspicion of exposure.',
+    actors:[
+      {who:'Service / Daemon', what:'backend · cron job · microservice', accent:'var(--steel)'},
+      {who:'Identity Provider', what:'authorization server', accent:'var(--amber)'},
+      {who:'Resource API',      what:'protected service',   accent:'var(--verify)'}
+    ],
+    steps:[
+      {from:0,to:1, back:true, ep:'POST /token · client_id + client_secret + scope',
+       carry:'Service authenticates as itself — no user involved, no redirect. Confidential client only: a public client cannot hold a secret. Alternatively, use a signed client assertion (JWT) instead of a secret for higher assurance.'},
+      {from:1,to:0, back:true, ep:'200 · { access_token, expires_in, token_type: "Bearer" }',
+       carry:'Access token scoped to the requested permissions. No refresh token: the service can re-authenticate directly whenever the token expires. Token lifetime is typically short (1 hour). Cache and reuse until near expiry.'},
+      {from:0,to:2, ep:'GET /resource · Authorization: Bearer <token>',
+       carry:'Service calls the protected API with the access token. Every request carries the token in the Authorization header.'},
+      {from:2,to:1, back:true, ep:'POST /introspect · token (optional)',
+       carry:'Resource API may validate the token by calling the introspection endpoint instead of verifying the JWT locally. Returns active: true/false plus claims. Rate-limit this — an attacker can probe validity of stolen tokens through this endpoint.'},
+      {from:2,to:0, ep:'200 · resource data',
+       carry:'API responds. The entire flow had no user agent and no redirect. This is why client credentials is appropriate for machine-to-machine calls and nothing else — it is entirely wrong for any flow where a user is involved.'}
+    ]
+  },
+  device: {
+    eyebrow:'Device Authorization Grant · TV · CLI · headless IoT',
+    noteHead:'The security model is preserved by using a separate device',
+    noteBody:'The device with no browser never handles the user\'s password or receives a redirect. Authentication happens on the user\'s phone or laptop — a full browser on a device they control. The device only polls for the token after the human completes the flow. The user_code is short-lived; the polling endpoint enforces rate limits via slow_down responses.',
+    actors:[
+      {who:'Device',       what:'TV · CLI · IoT hardware', accent:'var(--steel)'},
+      {who:'IdP',          what:'authorization server',    accent:'var(--amber)'},
+      {who:'User Browser', what:'phone · laptop',          accent:'var(--line)'}
+    ],
+    steps:[
+      {from:0,to:1, ep:'POST /device_authorization · client_id + scope',
+       carry:'Device requests a device code. No user interaction yet. No browser needed.'},
+      {from:1,to:0, ep:'200 · { device_code, user_code: "XKCD-42", verification_uri, expires_in: 300 }',
+       carry:'IdP returns a device_code (for the device to poll with), a short user_code, and a URL. The device displays the user_code and URL to the human — on screen, in terminal, wherever it can.'},
+      {from:0,to:2, ep:'Display: go to example.com/activate · enter XKCD-42',
+       carry:'The device shows the code and URL. The human reads it and picks up their phone or laptop.'},
+      {from:2,to:1, ep:'Browser → verification_uri → enter user_code → authenticate',
+       carry:'Authentication happens in a real browser on a real device the user controls. Full Conditional Access, MFA, and session policies apply. The device is not involved in this step at all.'},
+      {from:0,to:1, warn:true, ep:'Poll: POST /token · device_code (every 5s)',
+       carry:'Device polls the token endpoint. IdP returns authorization_pending until the human completes the browser flow. If polling is too fast, IdP returns slow_down and the device must back off. device_code expires after expires_in seconds.'},
+      {from:1,to:0, ep:'200 · { access_token, refresh_token, id_token }',
+       carry:'Human has authenticated. IdP issues tokens. The device receives them via polling — no redirect, no callback URL required. From this point the device uses the access token to call APIs normally.'}
+    ]
+  }
+};
+
+/* ============================================================
+   TAB SWITCHING
+   ============================================================ */
+const ALL_TABS = ['saml','oidc','kerb','pam','radius','scim','jwt','grants'];
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', String(x===t)));
+  ALL_TABS.forEach(id => document.getElementById('tab-'+id).classList.toggle('hidden', id!==t.dataset.tab));
+}));
+
+/* ============================================================
+   INSTANTIATE SEQUENCE DIAGRAMS
+   ============================================================ */
+const diagrams = {};
+
+function makeDiag(id, actors, steps){
+  const d = new SeqDiagram(`${id}-svg`, `${id}-panel`, `${id}-ctr`, actors, steps);
+  d.build();
+  document.getElementById(`${id}-play`).addEventListener('click', function(){ d.play(this); });
+  document.getElementById(`${id}-step`).addEventListener('click', () => d.step());
+  document.getElementById(`${id}-reset`).addEventListener('click', () => { d.reset(document.getElementById(`${id}-play`)); });
+  diagrams[id] = d;
+}
+
+makeDiag('saml',   samlActors,   samlSteps);
+makeDiag('oidc',   oidcActors,   oidcSteps);
+makeDiag('kerb',   kerbActors,   kerbSteps);
+makeDiag('pam',    pamActors,    pamSteps);
+makeDiag('radius', radiusActors, radiusSteps);
+
+/* ============================================================
+   OAUTH GRANT DIAGRAM (switchable)
+   ============================================================ */
+let activeGrant = 'pkce';
+let grantDiag = null;
+
+function buildGrantDiag(key){
+  activeGrant = key;
+  const g = grantData[key];
+  document.getElementById('grant-eyebrow').textContent = g.eyebrow;
+  document.getElementById('grant-note-head').textContent = g.noteHead;
+  document.getElementById('grant-note-body').textContent = g.noteBody;
+  document.getElementById('grant-ctr').textContent = `0 / ${g.steps.length}`;
+  if(grantDiag){ grantDiag.playing = false; cancelAnimationFrame(grantDiag.raf); }
+  grantDiag = new SeqDiagram('grant-svg','grant-panel','grant-ctr', g.actors, g.steps);
+  grantDiag.build();
+  document.getElementById('grant-play').textContent = 'Play';
+}
+buildGrantDiag('pkce');
+
+document.getElementById('grant-play').addEventListener('click', function(){ grantDiag.play(this); });
+document.getElementById('grant-step').addEventListener('click', () => grantDiag.step());
+document.getElementById('grant-reset').addEventListener('click', () => { grantDiag.reset(document.getElementById('grant-play')); });
+document.querySelectorAll('.grant-tab').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.grant-tab').forEach(b => b.classList.toggle('active', b===btn));
+  buildGrantDiag(btn.dataset.grant);
+}));
+
+/* ============================================================
+   JWT ANATOMY
+   ============================================================ */
+document.getElementById('jwt-h').addEventListener('click', () => {
+  document.getElementById('jpH').className = 'jwt-part lit lh';
+});
+document.getElementById('jwt-p').addEventListener('click', () => {
+  document.getElementById('jpP').className = 'jwt-part lit lp';
+});
+document.getElementById('jwt-s').addEventListener('click', () => {
+  document.getElementById('jpS').className = 'jwt-part lit ls';
+});
+document.getElementById('jwt-reset').addEventListener('click', () => {
+  ['jpH','jpP','jpS'].forEach(id => document.getElementById(id).className = 'jwt-part');
+});
+
+/* ============================================================
+   SCIM HUB ANIMATION
+   ============================================================ */
+(function(){
+  const stage = document.getElementById('scimStage');
+  const svgEl = document.getElementById('scimSvg');
+  const status = document.getElementById('scimStatus');
+  const W = 600, H = 360;
+  svgEl.setAttribute('viewBox',`0 0 ${W} ${H}`);
+
+  const cx = W/2, cy = H/2;
+  const apps = [
+    {id:'slack',  label:'Slack',    ico:'💬', angle:270, r:140},
+    {id:'github', label:'GitHub',   ico:'🐙', angle:30,  r:140},
+    {id:'gsuite', label:'Google WS',ico:'📧', angle:90,  r:140},
+    {id:'aws',    label:'AWS IAM',  ico:'☁️', angle:150, r:140},
+    {id:'jira',   label:'Jira',     ico:'📋', angle:210, r:140}
+  ];
+
+  // Draw static lines
+  apps.forEach(a => {
+    const rad = a.angle * Math.PI/180;
+    const ax = cx + Math.cos(rad)*a.r;
+    const ay = cy + Math.sin(rad)*a.r;
+    const line = document.createElementNS(NS,'line');
+    line.setAttribute('x1',cx); line.setAttribute('y1',cy);
+    line.setAttribute('x2',ax); line.setAttribute('y2',ay);
+    line.setAttribute('stroke','var(--line)'); line.setAttribute('stroke-width','1.5');
+    line.setAttribute('stroke-dasharray','4 4');
+    line.id = `scim-line-${a.id}`;
+    svgEl.appendChild(line);
+  });
+
+  // Pulse animation dots
+  function pulse(appId, col, cb){
+    const a = apps.find(x=>x.id===appId);
+    const rad = a.angle * Math.PI/180;
+    const ax = cx + Math.cos(rad)*a.r;
+    const ay = cy + Math.sin(rad)*a.r;
+    const dot = document.createElementNS(NS,'circle');
+    dot.setAttribute('r','7'); dot.setAttribute('cx',cx); dot.setAttribute('cy',cy);
+    dot.setAttribute('fill',col); dot.setAttribute('opacity','0.9');
+    svgEl.appendChild(dot);
+    const dur = 600, t0 = performance.now();
+    const frame = t => {
+      const p = Math.min(1,(t-t0)/dur);
+      const e = p<.5?2*p*p:-1+(4-2*p)*p;
+      dot.setAttribute('cx', cx + (ax-cx)*e);
+      dot.setAttribute('cy', cy + (ay-cy)*e);
+      dot.setAttribute('opacity', String(1-p*0.4));
+      if(p<1) requestAnimationFrame(frame);
+      else { svgEl.removeChild(dot); cb&&cb(); }
+    };
+    requestAnimationFrame(frame);
+  }
+
+  function setAppState(id, cls){
+    const el = document.getElementById(`scim-app-${id}`);
+    if(el) el.className = `scim-node app ${cls}`;
+  }
+
+  // Create hub node
+  const hub = document.createElement('div');
+  hub.className = 'scim-node hub';
+  hub.style.left = '50%'; hub.style.top = '50%';
+  hub.innerHTML = '<span class="ico">🔑</span>Identity Provider<br><span style="font-family:var(--mono);font-size:9px;color:var(--muted)">SCIM push</span>';
+  stage.appendChild(hub);
+
+  // Create app nodes
+  apps.forEach(a => {
+    const rad = a.angle * Math.PI/180;
+    const ax = cx + Math.cos(rad)*a.r;
+    const ay = cy + Math.sin(rad)*a.r;
+    const pctX = (ax/W*100).toFixed(1)+'%';
+    const pctY = (ay/H*100).toFixed(1)+'%';
+    const node = document.createElement('div');
+    node.id = `scim-app-${a.id}`;
+    node.className = 'scim-node app';
+    node.style.left = pctX; node.style.top = pctY;
+    node.innerHTML = `<span class="ico">${a.ico}</span>${a.label}`;
+    stage.appendChild(node);
+  });
+
+  function resetAll(){
+    apps.forEach(a => setAppState(a.id,''));
+    status.textContent = 'Choose an event to see how the IdP pushes lifecycle changes.';
+  }
+
+  function fireAll(col, cls, msg, delay){
+    status.textContent = msg;
+    let done = 0;
+    apps.forEach((a,i) => {
+      setTimeout(() => {
+        pulse(a.id, col, () => {
+          setAppState(a.id, cls);
+          done++;
+          if(done===apps.length) status.textContent += ' — all apps updated.';
+        });
+      }, i*90);
+    });
+  }
+
+  document.getElementById('scim-join').addEventListener('click', () => {
+    resetAll();
+    setTimeout(() => fireAll('var(--verify)','provisioned',
+      'POST /Users → creating account in all connected apps…'), 100);
+  });
+  document.getElementById('scim-move').addEventListener('click', () => {
+    status.textContent = 'PATCH /Users/{id} → updating group memberships…';
+    apps.forEach((a,i) => setTimeout(() => {
+      pulse(a.id,'var(--amber)', () => setAppState(a.id,'updated'));
+    }, i*90));
+  });
+  document.getElementById('scim-leave').addEventListener('click', () => {
+    status.textContent = 'DELETE /Users/{id} → deprovisioning across all apps…';
+    apps.forEach((a,i) => setTimeout(() => {
+      pulse(a.id,'var(--seal)', () => setAppState(a.id,'deprovisioned'));
+    }, i*90));
+  });
+  document.getElementById('scim-reset').addEventListener('click', resetAll);
+})();
+</script>
+</body>
+</html>

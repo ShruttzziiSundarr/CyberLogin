@@ -1,0 +1,187 @@
+Context and goal
+
+Build an open source web application called Unified Login Onboarding Portal. Its job is to let an administrator onboard a new client application onto a PingFederate based identity platform through a form driven UI, instead of clicking through the PingFederate admin console by hand.
+
+When an admin fills in the onboarding form and submits, the backend authenticates to the PingFederate administrative API and provisions the correct artifact for the chosen protocol:
+
+OAuth 2.0 / OIDC app → create an OAuth client
+SAML 2.0 app → create an SP connection
+
+The platform behind the portal is:
+
+PingFederate as the federation server (IdP, OAuth AS, OIDC provider)
+PingOne MFA as the second factor, invoked through a PingFederate authentication policy
+PingDirectory as the user store, wired into PingFederate as an LDAP data store and password credential validator
+
+The portal must never expose admin credentials to the browser. All privileged calls go through the backend only.
+
+This is an open source project, so it must run locally with docker compose and ship with a mock or dev identity provider so contributors can try it without a real PingFederate license.
+
+Architecture
+
+Three layers:
+
+Frontend — a single page app (React + Vite + TypeScript, Tailwind for styling). It renders the onboarding wizard, validates input, shows the provisioned endpoints after success, and lists existing onboarded apps.
+Backend — an API server (Node.js + Express + TypeScript, or FastAPI if you prefer Python; pick one and be consistent). It holds PingFederate admin credentials in server side config, exposes a clean internal REST API to the frontend, translates form input into PingFederate admin API payloads, and calls PingFederate.
+PingFederate integration module — an isolated client library inside the backend that wraps the PingFederate admin API. All Ping specific request shaping lives here so the rest of the backend stays clean.
+
+Keep the Ping integration behind an interface (IdentityProvider) so a second backend (for example a Keycloak or Okta adapter) could be added later without touching the routes. Do not build the other adapters now, just leave the seam.
+
+Tech stack
+Frontend: React 18, Vite, TypeScript, Tailwind, React Hook Form + Zod for form validation, TanStack Query for data fetching.
+Backend: Node.js 20, Express, TypeScript, Zod for request validation, undici or axios for outbound HTTP, pino for logging.
+Auth on the portal itself: session based admin login (do not hardcode). For local dev, a single admin account seeded from env vars is fine.
+Config: all secrets and hostnames via environment variables, loaded with dotenv. Never commit real values. Ship a .env.example.
+Containerization: Dockerfile for frontend and backend, plus a root docker-compose.yml that brings up frontend, backend, and an optional dev IdP.
+Testing: unit tests for the Ping integration module with the PingFederate API mocked; at least one integration test path per protocol.
+PingFederate admin API — connection details
+
+The backend talks to the PingFederate administrative API. Defaults:
+
+Base URL: https://<PF_ADMIN_HOST>:9999/pf-admin-api/v1
+Auth: HTTP Basic (admin username and password) for dev; support OAuth2 bearer as an alternative via config. Read the credentials from PF_ADMIN_USER / PF_ADMIN_PASSWORD / PF_ADMIN_BASE_URL.
+Every admin API request must include the header X-XSRF-Header: PingFederate. Requests without it are rejected. Also send Content-Type: application/json and Accept: application/json.
+TLS: PingFederate admin uses a self signed cert in dev. Make cert verification configurable (PF_TLS_INSECURE=true for local only, default false, with a loud warning when true).
+
+Use these admin API resources (all relative to the base URL above):
+
+Purpose	Method	Path
+List / create OAuth clients	GET, POST	/oauth/clients
+Get / update / delete a client	GET, PUT, DELETE	/oauth/clients/{clientId}
+List access token managers	GET	/oauth/accessTokenManagers
+List OIDC policies	GET	/oauth/openIdConnect/policies
+List / create SP connections (SAML apps)	GET, POST	/idp/spConnections
+Get / update / delete an SP connection	GET, PUT, DELETE	/idp/spConnections/{id}
+List IdP adapters	GET	/idp/adapters
+List authentication policies	GET, PUT	/authenticationPolicies
+List authentication policy contracts	GET, POST	/authenticationPolicyContracts
+List / create data stores (PingDirectory LDAP)	GET, POST	/dataStores
+List password credential validators	GET, POST	/passwordCredentialValidators
+List signing key pairs	GET	/keyPairs/signing
+List PingOne connections	GET, POST	/pingOneConnections
+Server settings	GET	/serverSettings
+
+Before building payloads, fetch the live schema by hitting the interactive API docs at https://<PF_ADMIN_HOST>:9999/pf-admin-api/api-docs and match field names exactly. Field shapes differ across PingFederate versions, so read the schema rather than assuming.
+
+Onboarding flows
+Flow A — OAuth 2.0 / OIDC client
+
+Form inputs the admin provides:
+
+Application name (maps to name)
+Client ID (maps to clientId; auto generate a slug if left blank)
+Grant types (multi select: authorization_code, client_credentials, refresh_token, implicit, device code)
+Redirect URIs (list; required for authorization_code)
+Scopes (multi select including openid, profile, email, plus custom)
+Whether OIDC is enabled (adds openid scope and attaches an OIDC policy)
+Token endpoint auth method (client secret basic, client secret post, private key JWT, none for PKCE public clients)
+Access token manager reference (dropdown populated from /oauth/accessTokenManagers)
+OIDC policy reference (dropdown from /oauth/openIdConnect/policies) when OIDC is on
+
+Backend behavior:
+
+Validate input with Zod.
+If a client secret is needed, generate a strong secret server side, POST the client to /oauth/clients, and return the secret to the UI exactly once (never store it in plaintext; if you must persist a record, store only a reference and metadata).
+Support PKCE for public clients (requireProofKeyForCodeExchange: true, no secret).
+On success, return the client plus the computed runtime endpoints (see the endpoints section).
+Flow B — SAML 2.0 SP connection
+
+Form inputs:
+
+Partner entity ID (the SP entity ID; unique, required)
+Connection name
+ACS (Assertion Consumer Service) URL and binding (POST or Redirect)
+SLO endpoint (optional)
+SAML metadata upload option: allow pasting or uploading the SP metadata XML and parse entity ID, ACS URL and signing cert from it
+NameID format (email address, unspecified, persistent, transient)
+Attribute contract (map PingDirectory / PingFederate attributes to SAML assertion attributes)
+Signing certificate for the SP (from uploaded metadata or manual upload)
+Signing key pair reference for PingFederate's side (dropdown from /keyPairs/signing)
+
+Backend behavior:
+
+If metadata XML is supplied, parse it and prefill the connection fields; let the admin review before submit.
+POST the assembled SP connection to /idp/spConnections.
+Return the connection plus the SAML runtime endpoints and a link to PingFederate's IdP metadata for the SP to consume.
+MFA wiring (PingOne MFA)
+
+MFA is enforced through PingFederate authentication policies, not on the client object. Provide an onboarding option "Require MFA for this app". When checked:
+
+Confirm a PingOne connection exists via /pingOneConnections; if not, surface a clear message that the platform admin must configure the PingOne connection first (do not try to create the PingOne tenant link from the portal).
+Ensure a PingOne MFA adapter or MFA capable policy fragment exists (list via /idp/adapters and /authenticationPolicies).
+Attach the app to an authentication policy path that includes the MFA step. Implement this as: read the current policy tree via GET /authenticationPolicies, add or reference a policy branch keyed to this app or its policy contract, and PUT it back. Because the policy tree is global and easy to break, do this behind a feature flag, validate the tree before writing, and always take a read first / diff / write approach. Log the before and after.
+
+Treat MFA wiring as the highest risk operation in the app. Guard it heavily.
+
+PingDirectory (user store)
+
+PingDirectory is the identity source. The portal does not create users. It only needs PingDirectory represented in PingFederate as:
+
+An LDAP data store (list / create via /dataStores)
+A password credential validator bound to that data store (/passwordCredentialValidators)
+
+Add a read only "Platform status" panel that calls these endpoints and shows whether a PingDirectory data store and PCV are configured, so the admin knows the base platform is ready before onboarding apps. Provide an optional guided create for the data store using env supplied LDAP host, bind DN and search base, but default to read only.
+
+Runtime endpoints to surface
+
+After any successful onboarding, show the relevant runtime endpoints so the app owner can plug them in. Compute them from PF_RUNTIME_BASE_URL (default https://<PF_RUNTIME_HOST>:9031).
+
+OAuth / OIDC:
+
+OIDC discovery: {runtime}/.well-known/openid-configuration
+Authorization: {runtime}/as/authorization.oauth2
+Token: {runtime}/as/token.oauth2
+UserInfo: {runtime}/idp/userinfo.openid
+JWKS: {runtime}/pf/JWKS
+Token introspection: {runtime}/as/introspect.oauth2
+Token revocation: {runtime}/as/revoke_token.oauth2
+
+SAML:
+
+IdP SSO: {runtime}/idp/SSO.saml2
+IdP SLO: {runtime}/idp/SLO.saml2
+IdP metadata: {runtime}/pf/federation_metadata.ping?PartnerSpId={entityId}
+
+Render these as copyable fields, and offer a "Download config" button that exports a JSON bundle of the client or connection details plus these endpoints.
+
+Portal internal API (backend routes)
+
+Design a clean internal REST surface the frontend consumes, for example:
+
+POST /api/auth/login, POST /api/auth/logout
+GET  /api/platform/status — PingDirectory data store, PCV, PingOne connection, signing keys presence
+GET  /api/catalog/oauth-atms, GET /api/catalog/oidc-policies, GET /api/catalog/signing-keys — dropdown data
+POST /api/onboard/oauth — Flow A
+POST /api/onboard/saml — Flow B
+GET  /api/apps — list onboarded OAuth clients and SP connections
+GET  /api/apps/{type}/{id} — detail plus computed endpoints
+DELETE /api/apps/{type}/{id} — offboard
+
+Validate every request body with Zod. Return typed, consistent error envelopes. Map PingFederate error responses into readable messages instead of leaking raw upstream payloads.
+
+Security requirements
+Admin creds and LDAP bind creds live only in backend env, never sent to the browser.
+Client secrets are returned to the UI exactly once at creation and never again.
+All portal routes except login require an authenticated admin session.
+Add CSRF protection on the portal's own mutating routes.
+Rate limit onboarding routes.
+Redact secrets in logs.
+Make TLS verification of the PingFederate admin endpoint default to on; only allow insecure mode with an explicit env flag and a startup warning.
+Never log full request bodies containing secrets.
+Deliverables
+A working monorepo: /frontend, /backend, root docker-compose.yml, .env.example, README.md.
+The onboarding wizard supporting both OAuth/OIDC and SAML flows, with the MFA toggle and PingDirectory status panel.
+The PingFederate integration module with unit tests against a mocked admin API.
+A README that explains local setup, the env vars, how to point at a real PingFederate, and the security model. Document the optional dev IdP.
+An optional docker-compose.dev.yml that starts a Keycloak container as a stand in IdP for contributors who lack PingFederate, clearly labeled as dev only and not part of the production path.
+Build order
+Scaffold repo, env config, README skeleton.
+Backend: PingFederate admin client (auth, XSRF header, TLS config) with a getServerSettings smoke test.
+Backend: catalog and platform status routes.
+Backend: OAuth/OIDC onboarding route + tests.
+Backend: SAML onboarding route + metadata parsing + tests.
+Backend: MFA wiring behind a feature flag, with read / diff / write safety.
+Frontend: auth, wizard shell, OAuth form, SAML form, success screen with endpoints, apps list.
+Dockerize everything, wire compose, write the README, add the optional dev IdP.
+
+Confirm the plan back to me, list any assumptions about PingFederate version and network reachability, then start with step 1.
