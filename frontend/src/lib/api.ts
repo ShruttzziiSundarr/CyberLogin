@@ -4,6 +4,7 @@ import type {
   AppSummary,
   AppType,
   CatalogItem,
+  IntegrationInfo,
   LoginRequest,
   OAuthOnboardRequest,
   OAuthOnboardResponse,
@@ -42,6 +43,11 @@ export async function logout(): Promise<void> {
 
 export async function getPlatformStatus(): Promise<PlatformStatus> {
   const { data } = await httpClient.get<PlatformStatus>('/platform/status');
+  return data;
+}
+
+export async function getIntegrationInfo(): Promise<IntegrationInfo> {
+  const { data } = await httpClient.get<IntegrationInfo>('/platform/integration-info');
   return data;
 }
 

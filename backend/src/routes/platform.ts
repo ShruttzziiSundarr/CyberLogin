@@ -4,8 +4,52 @@ import { getPingFederateClient } from '../pingfederate/PingFederateClient';
 import { env } from '../config/env';
 import { ApiErrors } from '../utils/errors';
 import { csrfProtection } from '../middleware/csrf';
+import { computeOAuthRuntimeEndpoints, computeSamlRuntimeEndpoints } from '../services/runtimeEndpoints';
+import { samlEndpoints, spCertificate, isIdpConfigured } from '../saml/spConfig';
 
 export const platformRouter = Router();
+
+// Everything an admin needs to hand PingFederate to configure it as the IdP for this SP
+// (Applications > Integration > SP Connections), plus a reference of PingFederate's own
+// OAuth 2.0 / OIDC authorization-server endpoints used when onboarding OAuth client apps.
+platformRouter.get('/integration-info', (_req, res) => {
+  const pfEndpoints = computeSamlRuntimeEndpoints(env.SP_ENTITY_ID);
+
+  res.json({
+    saml: {
+      spEntityId: env.SP_ENTITY_ID,
+      acsUrl: samlEndpoints.acs,
+      acsBinding: 'HTTP-POST',
+      sloUrl: samlEndpoints.sloRequest,
+      spMetadataUrl: samlEndpoints.metadata,
+      nameIdFormatsSupported: [
+        'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
+        'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent',
+        'urn:oasis:names:tc:SAML:2.0:nameid-format:transient',
+        'urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified'
+      ],
+      spCertificatePem: spCertificate,
+      idp: {
+        configured: isIdpConfigured(),
+        entityId: env.PF_IDP_ENTITY_ID || null,
+        ssoUrl: env.PF_IDP_SSO_URL || null,
+        sloUrl: env.PF_IDP_SLO_URL || null
+      },
+      // Where PingFederate's own IdP endpoints for this SP connection are expected to live
+      // once the SP Connection above is created, computed from PF_RUNTIME_BASE_URL.
+      pfRuntimeEndpoints: {
+        sso: pfEndpoints.sso,
+        slo: pfEndpoints.slo,
+        metadata: pfEndpoints.metadata
+      }
+    },
+    oauth: {
+      runtimeEndpoints: computeOAuthRuntimeEndpoints(),
+      grantTypesSupported: ['authorization_code', 'client_credentials', 'refresh_token', 'implicit', 'device_code'],
+      tokenEndpointAuthMethodsSupported: ['client_secret_basic', 'client_secret_post', 'private_key_jwt', 'none']
+    }
+  });
+});
 
 platformRouter.get('/status', async (_req, res, next) => {
   try {

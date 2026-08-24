@@ -24,20 +24,31 @@ authRouter.post('/login', (req, res, next) => {
 
   req.session.regenerate((err) => {
     if (err) return next(err);
-    req.session.user = { username };
-    const csrfToken = generateCsrfToken(req, res);
-    res.json({ user: { username }, csrfToken });
+    try {
+      req.session.user = { username };
+      // overwrite: the session ID just changed (regenerate), so any CSRF cookie the
+      // browser is still holding was hashed against the old session ID and would
+      // otherwise fail validation and throw synchronously outside Express's try/catch.
+      const csrfToken = generateCsrfToken(req, res, true);
+      res.json({ user: { username }, csrfToken });
+    } catch (csrfErr) {
+      next(csrfErr);
+    }
   });
 });
 
 // Lets the frontend recover a valid session + CSRF token after a page reload
 // (the CSRF token from /login only lives in JS memory on the client).
-authRouter.get('/session', (req, res) => {
+authRouter.get('/session', (req, res, next) => {
   if (!req.session.user) {
     return res.status(401).json({ error: { code: 'unauthorized', message: 'Not authenticated' } });
   }
-  const csrfToken = generateCsrfToken(req, res);
-  res.json({ user: req.session.user, csrfToken });
+  try {
+    const csrfToken = generateCsrfToken(req, res, true);
+    res.json({ user: req.session.user, csrfToken });
+  } catch (csrfErr) {
+    next(csrfErr);
+  }
 });
 
 authRouter.post('/logout', (req, res, next) => {

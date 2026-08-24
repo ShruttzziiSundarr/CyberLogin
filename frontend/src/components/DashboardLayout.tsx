@@ -21,7 +21,7 @@ export function DashboardLayout() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-6">
             <span className="text-sm font-semibold text-slate-900">
-              Unified Login Onboarding Portal
+              sso-lab
             </span>
             <nav className="flex items-center gap-1">
               <NavLink to="/" end className={navItemClass}>
@@ -32,6 +32,9 @@ export function DashboardLayout() {
               </NavLink>
               <NavLink to="/onboard" className={navItemClass}>
                 Onboard new app
+              </NavLink>
+              <NavLink to="/integration-info" className={navItemClass}>
+                Integration info
               </NavLink>
             </nav>
           </div>

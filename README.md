@@ -1,4 +1,4 @@
-# Unified Login Onboarding Portal
+# sso-lab
 
 An open-source, form-driven admin portal for onboarding client applications onto a
 [PingFederate](https://www.pingidentity.com/) based identity platform, without hand-clicking

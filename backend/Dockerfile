@@ -12,6 +12,7 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json* ./
 RUN npm install --omit=dev
 COPY --from=build /app/dist ./dist
+COPY certs ./certs
 EXPOSE 4000
 USER node
 CMD ["node", "dist/server.js"]

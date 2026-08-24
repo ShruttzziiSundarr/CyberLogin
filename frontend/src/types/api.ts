@@ -137,3 +137,31 @@ export interface LoginRequest {
   username: string;
   password: string;
 }
+
+export interface IntegrationInfo {
+  saml: {
+    spEntityId: string;
+    acsUrl: string;
+    acsBinding: 'HTTP-POST';
+    sloUrl: string;
+    spMetadataUrl: string;
+    nameIdFormatsSupported: string[];
+    spCertificatePem: string;
+    idp: {
+      configured: boolean;
+      entityId: string | null;
+      ssoUrl: string | null;
+      sloUrl: string | null;
+    };
+    pfRuntimeEndpoints: {
+      sso: string;
+      slo: string;
+      metadata: string;
+    };
+  };
+  oauth: {
+    runtimeEndpoints: OAuthRuntimeEndpoints;
+    grantTypesSupported: GrantType[];
+    tokenEndpointAuthMethodsSupported: TokenEndpointAuthMethod[];
+  };
+}

@@ -1,0 +1,1193 @@
+PingFederate is an enterprise federation server and identity bridge for user authentication and standards-based single sign-on (SSO) for employee, partner, and customer identities.
+
+PingFederate enables outbound and inbound solutions for SSO, federated identity management, customer identity and access management, mobile identity security, API security, and social identity integration. Browser-based SSO extends employee, customer, and partner identities across domains without passwords using standard identity protocols, such as SAML, WS-Federation, WS-Trust, OAuth, OpenID Connect (OIDC), and System for Cross-domain Identity Management (SCIM).
+
+
+About identity federation and SSO
+Federated identity management, or identity federation, allows enterprises to exchange identity information securely across domains, providing browser-based single sign-on (SSO).
+
+Identity federation also integrates access to applications across distinct business units within a single organization. As organizations grow through acquisitions, or when business units maintain separate user repositories and authentication mechanisms across applications, a federated solution to browser-based SSO is desirable.
+
+This cross-domain, identity-management solution provides numerous benefits, ranging from increased end user satisfaction and enhanced customer relations to reduced cost and greater security and accountability.
+
+For complete information about identity federation and the standards that support it, see Supported standards.
+
+Service providers and identity providers
+Identity federation standards identify two operational roles in an SSO transaction: the identity provider (IdP) and the service provider (SP).
+
+An IdP might be an enterprise that manages accounts for a large number of users who need secure access to the web-based applications or services of customers, suppliers, and business partners. An SP might be a SaaS provider or a business-process outsourcing (BPO) vendor wanting to simplify client access to its services.
+
+
+
+Federation roles
+A variety of federation roles work together in an identity federation partnership.
+
+The most recent sets of standards, SAML 2.0 and WS-Federation, define two roles in an identity federation partnership: an identity provider (IdP) and a service provider (SP).
+
+Earlier SAML 1.x specifications used the terms asserting party (for IdP) and relying party (for SP). For consistency and clarity, PingFederate adopts the later terms IdP and SP across all specifications.
+
+A third role, defined in the SAML 2.0 specifications and available in PingFederate, is that of an IdP Discovery provider.
+
+OAuth 2.0 and OpenID Connect 1.0 can configure PingFederate as an authorization server (AS), an OpenID provider (OP), and a relying party (RP).
+
+Identity provider
+An IdP, also called the SAML authority, is a system entity that authenticates a user, or SAML subject, and transmits referential identity information based on the authentication.
+
+The SAML subject may be a person, a web application, or a web server. Since the SAML subject is often a person, our documentation employs the term "user" throughout.
+
+Service provider
+An SP is the consumer of identity information provided by the IdP. Based on trust, technical agreements, and verification of adherence to protocols, SP applications and systems determine how to use information contained in an SSO token: a SAML assertion, a JSON Web Token (JWT), or an OAuth access token in conjunction with an ID token.
+
+IdP Discovery provider
+This role provides an IdP look-up service that can be incorporated into the implementation of either an IdP or an SP, or employed as a standalone server.
+
+Authorization server
+An OAuth authorization server issues access tokens and refresh tokens to OAuth clients after the resource owner fulfills the authentication requirement.
+
+OpenID provider
+An OpenID provider (OP) is an AS that is capable of authenticating the resource owner and providing claims (user attributes) to an RP about the authentication event and the user.
+
+
+
+Terminology
+Definitions for the list of Security Assertion Markup Language (SAML) specifications that provide a system of building blocks and support components for achieving secure data exchange in an identity federation.
+
+The list of SAML specifications includes:
+
+Assertions
+
+Bindings
+
+Profiles
+
+Metadata
+
+Authentication Context
+
+Assertions
+Assertions are XML documents sent from an identity provider (IdP) to a service provider (SP). Each assertion contains identifying information about a user who has initiated a single sign-on (SSO) request.
+
+Bindings
+A SAML binding describes the way transport protocols exchange messages. PingFederate supports the following bindings:
+
+HTTP POST
+Describes how to transport SAML messages in HTML form-control content, which uses a base-64 format.
+
+HTTP Artifact
+Describes how to use an artifact to represent a SAML message. An HTML form control or a query string in the URL transports the artifact.
+
+HTTP Redirect (SAML 2.0)
+Describes how to transport SAML messages using HTTP 302 status-code response messages.
+
+SOAP (SAML 2.0)
+Describes how to transfer SAML messages across the back channel.
+
+Profiles
+Profiles describe processes and message flows combining assertions, request/response message specifications, and bindings to achieve a specific desired functionality or use case. Profiles define how specifications (such as SAML) are applied, and play a large part in how PingFederate operates.
+
+Metadata
+SAML 2.0 defines an XML schema to standardize metadata to facilitate the exchange of configuration information among federation partners, such as profile and binding support, connection endpoints, and certificate information.
+
+Whether you publish or consume metadata, PingFederate supports the use of XML digital signatures to ensure the integrity of the data.
+
+Authentication context
+Before allowing access to a protected resource, an SP might want information about the assertion and the user’s original authentication by the IdP. The SP uses this information for an access control decision or to provide an audit trail for regulatory or security-policy compliance.
+
+The SAML 2.0 specification provides an XML schema whereby partners create authentication-context declarations. Partners might choose to reference a URI to implement a set of classes provided by the specification to help categorize and simplify context interpretation (see the OASIS document: Authentication Context for the OASIS Security Assertion Markup Language (SAML) V2.0). However, it is up to partners to decide if they require additional authentication context and if these classes supply an adequate description. For SAML 1.x, if using the authentication context, called AuthenticationMethod, the context must appear as a URI (see ).
+
+An administrator can configure PingFederate, acting as an IdP, to include a specific authentication context in assertions for browser SSO or WS-Trust.
+
+Several PingFederate integration kits provide methods for the developer to insert authentication context from external IdP applications into the assertion. The SP developer has the option to:
+
+Call methods for extracting authentication context from an assertion.
+
+Work with the application to create access control or other processing based on the context.
+Browser-based single sign-on (SSO) includes SAML 1.x profiles, SAML 2.0 profiles, WS-Federation, and OpenID Connect and provides standards-based SSO, single logout (SLO), attribute query and X.509 attribute sharing profile (XASP), and the WS-Federation Passive Requestor Profile for service provider (SP)-initiated SSO.
+Security token service
+The PingFederate WS-Trust Security Token Service (STS) allows organizations to extend single sign-on (SSO) identity management (IdM) to web services.
+
+The STS shares the core functionality of PingFederate, including console administration, identity and attribute mapping, and certificate security management. With PingFederate, web services identify the end user who has initiated a transaction across domains, providing enhanced service while simultaneously ensuring appropriate information access and regulatory accountability. For information about WS-Trust and the role of an STS, see Web services standards.
+
+You can use PingFederate in many different scenarios to address different identity and security problems as they relate to web services, service-oriented architecture (SOA), and Enterprise Service Buses. All of these scenarios share a recommended architectural approach that uses a SAML assertion as the standard security token shared between security domains. For more information, see WS-Trust STS.
+
+
+OAuth authorization server
+PingFederate can act as an OAuth authorization server (AS), allowing a resource owner to grant authorization to a client requesting access to resources protected by a resource server (RS).
+
+The OAuth AS issues tokens to clients on behalf of a resource for use in authenticating a subsequent API call—typically, but not exclusively a REST API. The PingFederate OAuth AS issues tokens to clients in several different scenarios, including:
+
+A web application wants access to a protected resource associated with a user and needs the user’s consent.
+
+A native application client on a mobile device or tablet wants to connect to a user’s online account and needs the user’s consent.
+
+An enterprise application client wants to access a protected resource hosted by a business partner, customer, or software as a service (SaaS) provider.
+
+For information about OAuth and the role of an AS, see OAuth 2.0 and PingFederate AS.
+
+You can configure the PingFederate OAuth AS independently or in conjunction with security token service (STS) and browser-based single sign-on (SSO) for either an identity provider (IdP) or a service provider (SP) deployment. For more information, see About OAuth.
+
+OAuth AS capabilities might require additional licenses. For more information, contact sales@pingidentity.com.
+
+
+
+User account management
+Typically, the identity provider (IdP) repository maintains user accounts in an identity federation. However, a service provider (SP) often has its own set of user accounts, which might not always correspond to IdP users.
+
+The SP might need to establish and maintain parallel accounts for remote single sign-on (SSO) users to enforce authorization policy, customize user experience, comply with regulations, or a combination of such purposes.
+
+PingFederate provides two kinds of user provisioning for browser-based SSO to facilitate cross-domain account management, one designed for an IdP, and one for an SP:
+
+At an IdP site, an administrator automatically provisions and maintains user accounts for partner SPs who have implement the System for Cross-domain Identity Management (SCIM) or, when using optional plugin software as a service (SaaS) connectors, for selected hosted-software providers..
+
+At an SP site, an administrator provisions accounts within the organization automatically from SCIM-enabled IdPs or usesinformation from SAML assertions received during SSO events.
+
+Enterprise deployment features
+PingFederate’s enterprise-deployment architecture provides one location to manage your environment, eliminating the need to maintain redundant copies of these configurations and trust relationships.
+
+One-time configuration, available everywhere
+PingFederate houses all protocol definitions, public key infrastructure (PKI) keys, policies, and profiles in a single location. You can add new protocols, profiles, or use cases, and then make them available to your entire organization.
+
+Improved security
+PingFederate improves security by creating a single “doorway” through which all your identity information is exchanged. The same doorway is used regardless of who the users are or in which direction information is shared, such as internal users accessing external applications and external users accessing internal systems.A diagram depicting PingFederate’s single doorway approach to exchanging identity information.
+
+Load balancers and reverse proxies
+To enhance performance and security, you can deploy PingFederate behind an application load balancer (ALB), a network load balancer (NLB), a reverse proxy, or a similar network traffic management solution on-premise or in the cloud.
+
+PingFederate can benefit from knowing the originating IP addresses of incoming requests. Before you deploy PingFederate in the cloud or behind a load balancer, to avoid unexpected behaviors, work with your network team and configure PingFederate’s Incoming Proxy Settings accordingly. For more information, see Configuring incoming proxy settings.
+
+Extensive audit and logging capabilities
+With PingFederate’s extensive auditing and logging capabilities, you can complete logging-related compliance and service-level requirements, without having to acquire and consolidate disparate logs from throughout your organization.
+
+Business use case driven configuration
+The PingFederate administrative console supports various protocol, while reducing complexity and learning curves. You are guided through configuration steps applicable only to the business use cases you need to support.
+
+
+
+Starting and stopping PingFederate
+Depending on the application mode and the operating system, the steps to start, stop, or restart PingFederate vary.
+
+If you install or upgrade PingFederate using its platform-specific installer, PingFederate configures to run as a service. You can stop and disable the service and run PingFederate as a console application.
+
+If you install or upgrade PingFederate manually by using the PingFederate product distribution file or the Upgrade Utility in command line, you can run PingFederate as a console application or install the PingFederate service manually and run it as a service.
+
+Starting and stopping PingFederate on Windows
+Starting and stopping PingFederate as an application
+To start PingFederate:
+
+In Windows, open a command prompt.
+
+Go to <pf_install>/pingfederate/bin.
+
+Run run.bat.
+
+Keep the command prompt open.
+
+To stop PingFederate:
+
+Locate the command prompt running PingFederate.
+
+Press CTRL+C to terminate PingFederate.
+
+To stop and restart PingFederate:
+
+Locate the command prompt running PingFederate.
+
+Press CTRL+C to terminate PingFederate.
+
+When PingFederate stops, run run.bat.
+
+Keep the command prompt open.
+
+Starting and stopping PingFederate as a Windows service
+To start PingFederate:
+
+In Windows, go to Control Panel > System and Security > Administrative Tools > Services.
+
+Right-click on the PingFederate service and click Start.
+
+To stop PingFederate:
+
+Go to Control Panel > Administrative Tools > Services.
+
+Right-click on the PingFederate service and click Stop.
+
+To restart PingFederate:
+
+Go to Control Panel > Administrative Tools > Services.
+
+Right-click on the PingFederate service and select Restart.
+
+Starting and stopping PingFederate on Linux
+Starting and stopping PingFederate as an application
+To start PingFederate:
+
+Open a terminal window.
+
+Go to <pf_install>/pingfederate/bin.
+
+Run run.sh.
+
+Keep the terminal window open.
+
+To stop PingFederate:
+
+Locate the terminal window running PingFederate.
+
+Press CTRL+C to terminate PingFederate.
+
+To restart PingFederate:
+
+Locate the terminal window running PingFederate.
+
+Press CTRL+C to terminate PingFederate.
+
+When PingFederate stops, run run.sh.
+
+Keep the terminal window open.
+
+Starting and stopping PingFederate as a Linux service
+To start PingFederate:
+
+Open a terminal window.
+
+Enter the system-dependent service command to start PingFederate.
+
+To stop PingFederate:
+
+Open a terminal window.
+
+Enter the system-dependent service command to stop PingFederate.
+
+To restart PingFederate:
+
+Open a terminal window.
+
+Enter the system-dependent service command to restart PingFederate.
+
+
+
+
+Opening the PingFederate administrative console
+The PingFederate administrative console provides a wizard-like interface in which you configure your federation use cases.
+
+About this task
+To open the administrative console:
+
+Steps
+Start PingFederate. See Starting and stopping PingFederate.
+
+In a clustered PingFederate environment, start PingFederate on the console node.
+
+Start a web browser.
+
+Go to https://<pf_host>:9999/.
+
+For PingFederate 10.1 and earlier, the administrative console is accessed at https://<pf_host>:9999/pingfederate/app.
+
+<pf_host> is the network address of your PingFederate server. It can be an IP address, a host name, or a fully qualified domain name. It must be reachable from your computer.
+
+9999 is the default value of the pf.admin.https.port property in the run.properties file.
+
+Setting up PingFederate
+After installing PingFederate, use the PingFederate setup wizard to configure the necessary initial settings.
+
+About this task
+The setup wizard guides you through the following steps:
+
+Agree to the Terms and Conditions.
+
+Enter the base URL used for communicating with your PingFederate environment.
+
+Connect to PingOne. You can do this step later. For more information, see Creating connections to PingOne.
+
+Upload your PingFederate license.
+
+Create an administrator account.
+
+Review and finish.
+
+The wizard appears every time you open the PingFederate administrative console until you complete your initial setup.
+
+If you exit the wizard before completing the setup, none of your information is saved.
+
+Steps
+Start the PingFederate server. For more information, see Starting and stopping PingFederate
+
+In your browser, go to https://<pf_host>:9999/pingfederate/app. The setup wizard opens.
+
+<pf_host> is the network address of your PingFederate server. It can be an IP address, a host name, or a fully qualified domain name. It must be reachable from your computer.
+
+9999 is the default value of the pf.admin.https.port property in the run.properties file.
+
+Follow the instructions in the wizard.
+
+Click Back to return to a previous step.
+
+Click X and close the browser tab to cancel your setup process.
+
+Click Restart to start again from the beginning.
+
+Result:
+After you complete the setup wizard’s steps, the PingFederate administrative console opens. You can continue configuring PingFederate.
+
+The PingFederate administrative console provides pages and a wizard-like interface in which you configure your federation use cases.
+
+The toolbar at the top of the administrative console provides controls mainly for navigating PingFederate. Learn more about navigating PingFederate in Navigation tabs and menus.
+
+The toolbar provides controls for navigating PingFederate
+
+ 
+
+Toolbar control	Description
+PingOne home button PingOne home button
+
+If PingFederate is integrated with PingOne, this button opens the PingOne unified admin console.
+
+Configure the region and environment ID for your PingOne unified admin URL in the run.properties file. Learn more in Configuring PingFederate properties.
+
+PingFederate home link
+
+Opens the PingFederate administrative console’s home page
+
+Authentication tab
+
+Opens the Authentication navigation page, which offers a menu pane and a shortcut pane
+
+Applications tab
+
+Opens the Applications navigation page, which offers a menu pane and a shortcut pane
+
+Security tab
+
+Opens the Security navigation page, which offers a menu pane and a shortcut pane
+
+System tab
+
+Opens the System navigation page, which offers a menu pane and a shortcut pane
+
+Search icon Search icon
+
+Opens a dialog box that lets you search for and open PingFederate pages
+
+Bell icon Bell icon
+
+When a dot appears on the icon, clicking the icon opens a message about an important administrative issue. The messages also provide a link to the page where you can resolve the issue.
+
+Some critical notifications appear on a banner above the toolbar.
+
+Help icon Help icon
+
+Opens the Help menu, which provides access to context-sensitive online help, a tour of the console, endpoint information, and information about your version and license
+
+Account icon Account icon
+
+Lets you sign on to and off from your PingFederate account
+
+Navigation tabs and menus
+On This Page
+Navigation tabs and menus
+The PingFederate administrative console provides navigation tabs and menus. When you select a tab at the top of the console, the relevant menus appear on the left menu pane. When you select a menu, the menu items appear. When you select a menu item, the window with the same name appears. The menus and menu items depend on your permissions in PingFederate. For more information about permissions, see Administrative accounts.
+
+Each navigation tab provides access to multiple menus on the left menu pane
+Menus on the Authentication tab	Menus on the Applications tab	Menus on the Security tab	Menus on the System tab
+Integration
+
+Policies
+
+OAuth
+
+Token Exchange
+
+Integration
+
+OAuth
+
+Token Exchange
+
+Certificate & Key Management
+
+System Integration
+
+Data & Credential Stores
+
+Server
+
+OAuth Settings
+
+External Systems
+
+Monitoring & Notifications
+
+Protocol Metadata
+
+Navigation tabs, menus, and menu items in alphabetical order
+Tabs	Menus	Menu items and window names
+Applications
+
+Integration
+
+Adapter-to-Adapter Mappings
+
+Policy Contract Adapter Mappings
+
+SP Adapters
+
+SP Connections
+
+SP Default URLs
+
+Target URL Mapping
+
+OAuth
+
+Access Token Management
+
+Access Token Mappings
+
+CIBA Request Policies
+
+Clients
+
+OpenID Connect Policy Management
+
+Token Exchange
+
+Generator Groups
+
+Processor Policies
+
+Token Generator Mappings
+
+Token Generators
+
+Token Translator Mappings
+
+Authentication
+
+Integration
+
+Authentication API Applications
+
+IdP Adapters
+
+IdP Connections
+
+IdP Default URL
+
+OAuth
+
+CIBA Authenticators
+
+IdP Adapter Grant Mapping
+
+Policy Contract Grant Mapping
+
+Resource Owner Credentials Grant Mapping
+
+Policies
+
+Fragments
+
+Local Identity Profiles
+
+Policies
+
+Policy Contracts
+
+Selectors
+
+Sessions
+
+Token Exchange
+
+STS Request Parameters
+
+Token Processors
+
+Security
+
+Certificate & Key Management
+
+Certificate Revocation Checking
+
+OAuth & OpenID Connect Keys
+
+Partner Metadata URLs
+
+Signing & Decryption Keys & Certificates
+
+SSL Client Keys & Certificates
+
+SSL Server Certificates
+
+System Keys
+
+Trusted CAs
+
+System Integration
+
+Incoming Proxy Settings
+
+Redirect Validation
+
+Service Authentication
+
+System
+
+Data & Credential Stores
+
+Active Directory Domains/Kerberos Realms
+
+Data Stores
+
+Identity Store Provisioners
+
+Password Credential Validators
+
+External Systems
+
+CAPTCHA and Risk Providers
+
+Connect to PingOne for Enterprise
+
+Notification Publishers
+
+PingOne Connections
+
+SMS Provider Settings
+
+Monitoring & Notifications
+
+Runtime Notifications
+
+Runtime Reporting
+
+OAuth Settings
+
+Authorization Server Settings
+
+Client Registration Policies
+
+Client Settings
+
+Scope Management
+
+Protocol Metadata
+
+Attribute Requester Mapping
+
+File Signing
+
+Metadata Export
+
+Metadata Settings
+
+SP Affiliations
+
+Server
+
+Administrative Accounts
+
+Cluster Management
+
+Configuration Archive
+
+Extended Properties
+
+General Settings
+
+License
+
+Virtual Host Names
+
+Tasks and steps
+On This Page
+Tasks and steps
+Each task consists of a series of tabs. Each tab consists of a sequence of steps. The tasks and tabs appear in the top portion of the page.
+
+Screen capture of sample tasks and steps in the administrative console
+Sample tasks and steps
+In this example, the primary task is managing one or more IdP adapter instances (IdP Adapters). The secondary task is creating an adapter instance (Create Adapter Instance). The current tab selects the type of adapter (Type). The subsequent tabs, which the administrator has not yet reached, are grayed out.
+
+The administrator console displays a summary page at the end of every task, which offers the opportunity to review and make changes as needed.
+
+Some steps provide buttons that branch to secondary tasks with multiple tabs. When the secondary tasks are complete, the administrative console returns to the primary task for the administrators to continue with the configuration.
+
+Clicking Cancel or Done discards all unsaved changes for the tabs shown in the current task and returns you to the page from which you accessed the task.
+
+Example
+When creating a connection to a partner, the administrator might need to create a new digital signing certificate. The administrative console provides a button to begin creating a new signing certificate. When the administrator completes the task, the administrative console returns to the primary task of creating a connection to a partner.
+
+Admin console best practices
+On This Page
+Admin console best practices
+The admin console is a convenient way to configure and manage your PingFederate environment. However, you should keep the following best practices in mind while using the admin console so that you don’t inadvertently create errors or corrupt your PingFederate configuration.
+
+Don’t use your browser’s Back button
+Using your browser’s navigation buttons such as Back or Reload, can cause PingFederate to behave inconsistently.
+
+If you need to go back to a previous menu, use the navigation buttons at the top or right side of the PingFederate menu.
+
+To go back a step in a configuration workflow with multiple tabs, click the tab you want to visit, or click Previous at the bottom of the screen.
+
+a screencapture of the Protocol Settings menu with arrows pointing to the previous tab and Previous button.
+Don’t use multiple browser tabs
+Using PingFederate in multiple browser tabs could cause errors or inconsistencies.
+
+Wait for a page to finish loading before going to another page
+Going to another page before the current page finishes loading can cause inconsistent behavior. Even if you go to a page by mistake, allow it to load fully before going elsewhere.
+
+One administrator at a time
+You should allow only one administrative user to sign on to PingFederate at any one time. Because admins can create or change configurations, having multiple admins working in PingFederate at the same time risks causing conflicts.
+
+To configure PingFederate to allow only one administrator at a time, set the pf.console.login.mode parameter in run.properties to single.
+
+You can have one or more auditors in PingFederate at the same time as an admin. Auditors can see settings in the admin console, but they can’t change them.
+
+Don’t replicate while an admin is working
+If you’re running PingFederate in a clustered environment, you should only replicate configurations to other nodes while no admins are working in the admin console. If an admin is creating or changing a configuration while replication is in progress, the replication might only carry over a portion of the configuration.
+
+Clear your cache and cookies
+If pages in PingFederate aren’t loading at all, or it returns the Something’s not right error page, trying clearing the cache and cookies in your browser. This can be particularly effective after an upgrade.
+
+
+
+Third-party cryptographic solutions
+On This Page
+Third-party cryptographic solutions
+Hardware security modules
+Software cryptographic solution
+PingFederate can use third-party hardware and software cryptographic solutions.
+
+You can configure PingFederate to use a hardware security module (HSM) for cryptographic material storage and operations. When configured, private keys and their corresponding certificate are stored on the HSM. Related signing and decryption operations are processed there for enhanced security. By default, even in HSM mode, dynamic OAuth and OpenID Connect signing and decryption keys are generated and stored in the memory of PingFederate cluster nodes. To ensure continuity after a full cluster restart, the decryption keys are also persisted to disk, and encrypted there with PingFederate’s active configuration encryption key. To ensure OAuth and OpenID Connect keys are instead stored on the HSM, you must enable static keys.
+
+You can also integrate PingFederate with a third-party software cryptographic solution.
+
+Hardware security modules
+Typically, integrating with an HSM involves two steps:
+
+Install and configure the HSM according to the manufacturer’s documentation.
+
+Follow the vendor-specific instructions to configure a new or existing PingFederate environment to use the HSM for key generation, storage, and operation.
+
+Use HSM hybrid mode to store each relevant key and certificate on the HSM or the local trust store. This allows you to transition the storage of keys and certificates to an HSM without needing to deploy a new PingFederate environment to mirror the setup. For more information, see Transitioning to an HSM.
+
+Configuring PingFederate to use an HSM for cryptographic material storage and operations might impact performance. The level of impact depends on the performance of cryptographic functionality provided by the HSM and the network latency between PingFederate and the HSM. Consult with your HSM vendor for performance tuning if you plan to use an HSM in your PingFederate deployment.
+
+Software cryptographic solution
+PingFederate supports Bouncy Castle FIPS as the provider of its Java keystore and cryptographic operations.
+
+
+SP connection management
+As an identity provider (IdP), you manage connection settings to support the exchange of federation-protocol messages such as SAML, WS-Federation, or WS-Trust with a service provider (SP) or security token service (STS) client application at your site.
+
+The settings your IdP manages include:
+
+User attributes that you expect to send in a single sign-on (SSO) token, including SAML assertions, WS-Trust STS SAML tokens, or WS-Federation JSON Web Tokens (JWT).
+
+User attributes that are sent using the SAML Attribute Query profile, if that profile is used. For more information, see Configuring the Attribute Query profile in an SP connection.
+
+The protocol, profiles, and bindings of the connection, including detailed security specifications such as the use of back-channel authentication, digital signatures, signature verification, and XML encryption
+
+To establish a connection, you and your partner must decide this information in advance. For more information, see Federation planning checklist.
+
+If your agreement includes sending assertions containing attribute values from local datastores, you must define the required datastores. For more information, see Managing datastores.
+
+If you delete a provisioning connection, the users are not deleted from the SP. They are simply no longer managed by PingFederate.
+
+Administrative interface
+Manage connection settings using the SP Affiliations window, accessed from System > Protocol Metadata, which organizes the settings into a series of primary tasks.
+
+Some primary tasks have one or more levels of sub task. Each primary or sub task has its own tab for managing one or more settings. You can move to a sibling task using the Next or Previous button. If you are on a sub task, you can also move to its parent task using the Done button.
+
+When creating a new connection, you can save your progress using the Save Draft button. Not all windows offer this option. When you reach the Activation & Summary tab, you must click Save to complete the new connection.
+
+When editing an existing connection, make changes and then click Save to commit your changes. You are not required to step through all window to reach the Activation & Summary window before you can save your changes.
+
+The Save button is available on most tabs. If a window does not show a Save button, click Next or Done until you reach a window where you can use its Save button to commit your changes.
+Accessing SP connections
+The SP Connections window lists all service provider connections and displays up to 20 connections at a time. As needed, you can sort connections by connection name, partner connection ID, default virtual server ID, creation date, or last modified timestamps; narrow by protocol type or status; use the pagination controls to navigate through your connections; and search for connections by name or ID.
+
+About this task
+A connection is included in the search results so long as its name or ID is a partial, case-insensitive match to a search term.
+
+Steps
+Go to Applications > Integration > SP Connections.
+
+To edit a connection, select the connection by its name. For the setting you want to make a change, select the corresponding window title and then follow the configuration wizard to complete the task.
+
+To create a connection, click Create Connection and follow the on-screen steps.
+
+To copy a connection, click Select Action > Copy and then follow the on-screen steps.
+
+This is most useful if the new connection and the source connection share many common setting values.
+
+PingFederate doesn’t include outbound provisioning configurations in connection copies. For more information, see Configuring outbound provisioning.
+
+To export a connection, click Select Action > Export Connection and then save the XML file as prompted.
+
+This is useful in situations where you want to make a backup of a connection prior to changing it.
+
+To import a connection, click Import Connection. For more information, see Importing a connection.
+
+If the connection already exists, you have the option to overwrite the existing connection.
+
+Prior to the import, you can modify the XML file to suit your needs. The XML file can also be imported to another PingFederate environment acting in the same federation role (IdP) at your site. The source and the target must run the same version of PingFederate.
+
+To export metadata for any SAML Browser SSO connection, click Select Action > Export Metadata and then follow the on-screen instructions.
+
+To update a SAML Browser SSO connection, click Select Action > Update with Metadata, then follow the on-screen instructions. For more information, see Importing SP metadata.
+
+You can update a connection via a metadata XML file or a metadata URL.
+
+The update operation might require additional configuration. Review the connection after the update operation.
+
+Click the toggle to enable or disable a connection.
+
+To remove a connection, click Select Action > Delete.
+
+To override the verbosity of runtime transaction logging for all SP connections, click Show Advanced Fields and the select the desired override option.
+
+Override option	Description
+Off
+
+Select this option and let the per-connection Logging Mode configuration determine the amount of information PingFederate records in the runtime transaction log.
+
+This is the default selection.
+
+On
+
+Select this option, followed by one of the four logging modes, to set the verbosity of runtime transaction logging for all SP connections. This is most useful when troubleshooting an issue that affects multiple connections.
+
+To turn off automatic multi-connection error checking, click Show Advanced Fields > Disable Automatic Connection Validation checkbox.
+
+This checkbox is not selected by default.
+
+Once selected or cleared, the state of this setting is also reflected on the Authentication > Integration > IdP Connections window.
+
+For more information about this advanced setting and its impact, refer to Configuring automatic connection validation.
+
+To keep your changes, click Save.
+
+To discard your changes, click Cancel.
+
+Importing a connection
+You can import a connection in the Import Connection window.
+
+About this task
+Prior to the import, you can modify the XML file to suit your needs. The XML file can also be imported to another PingFederate environment acting in the same federation role. The source and the target must run the same version of PingFederate.
+
+Steps
+Go to Applications > Integration > SP Connections.
+
+Click Import Connection.
+
+Click Choose File and browse to a connection XML file.
+
+Select the Allow Update checkbox to overwrite an existing connection with the imported file.
+
+Click Import and Done.
+
+
+Updating a SAML connection using metadata
+You can update an existing SAML connection using a metadata file or a metadata URL from your partner.
+
+About this task
+This manual update is independent from the optional and per-connection automatic update feature.
+
+Steps
+Go to Applications > Integration > SP Connections.
+
+For the SAML connection that you want to update, click Select Action > Update with Metadata.
+
+See the following steps to import or update metadata. Instructions vary depending on the medium of the metadata.
+
+Metadata medium	Steps
+Metadata XML File
+
+On the Import Metadata window, select the File option.
+
+Choose the metadata file, and then click Next.
+
+If the metadata file is digitally signed but the verification certificate is provided outside of the metadata, import the metadata verification certificate on the Import Certificate tab, and then click Next.
+
+On the Metadata Summary window, review the signature information to evaluate the authenticity of the metadata.
+
+Click Save.
+
+A metadata URL
+
+On the Import Metadata window, select the URL option.
+
+Select the metadata from the Metadata URL list.
+
+If the metadata you want is not shown in the list, click Manage Partner Metadata URLs and enter the URL in the text box.
+
+Click Load Metadata.
+
+If there is a digital signature error, click Manage Partner Metadata URLs to resolve the issue.
+
+Click Save.
+
+On the Connections window, click Save.
+
+Result
+If the endpoints in the metadata share the same base URL (protocol, hostname, and port), PingFederate uses this information to populate the Base URL field. Consequently, individual endpoints on other windows do not include this information. Only relative paths are shown.
+
+Example
+Example
+
+A service provider (SP) has just changed its signing certificate and published a new metadata with the new certificate. To minimize the impacts to your users, you as the identity provider (IdP) can update the SP connection using the metadata immediately.
+
+Access the SP Connectionswindow from Applications > Integration > SP Connections.
+
+For the applicable SAML connection, click Select Action > Update with Metadata.
+
+Follow the workflow to complete the task.
+
+Choosing an SP connection type
+You can manually create service provider (SP) connections in PingFederate using browser single sign-on (SSO), WS-Trust security token service (STS), outbound provisioning, or any combination thereof.
+
+About this task
+If you are not using a connection template, which pre-configures browser-based SSO, indicate on the Connection Type tab whether the connection to this partner is for Browser SSO, WS-Trust STS, outbound provisioning, or any combination of them.
+
+You can add STS, OAuth, and outbound provisioning support to any existing SSO connection, or vice versa, at any time.
+
+If your partner’s deployment supports multiple protocols and you intend to communicate using more than one, you must set up a separate connection for each protocol. Each connection must use a unique (partner) connection ID.
+
+Steps
+Go to Applications > Integration > SP Connections.
+
+Click Create Connection.
+
+Select Do not use a template for this connection.
+
+To configure a connection for secure browser-based SSO, select the Browser SSO Profiles checkbox.
+
+If you are not using a connection template, you must select the applicable protocol from the list when establishing a new connection.
+
+For a WS-Federation connection, select the desired token type, either SAML 1.1, SAML 2.0, or JWT (JSON Web Token).
+
+Learn more about creating a SAML application in Configuring a SAML application in PingFederate.
+
+If you are creating a WS-Federation connection to Microsoft Windows Azure Pack, select JWT as the token type.
+
+PingFederate can encrypt the subject and attributes of SAML 2.0 assertions.
+
+For information about configuring encryption policies on a PingFederate identity provider (IdP), see Configuring XML encryption policy (SAML 2.0).
+
+For information about configuring encryption policies on a PingFederate SP, see Specifying XML encryption policy (for SAML 2.0).
+
+(Optional) Choose one or both of the following depending on your configuration needs.
+
+Connection Template	Step
+WS-TRUST STS
+
+Select the WS-Trust STS checkbox.
+
+Outbound Provisioning
+
+Select Outbound Provisioning and then select the provisioning type from the list.
+
+If your PingFederate license manages connections by groups, select a license group for this connection.
+
+This option is not shown for unrestricted or other types of licenses.
+
+To save your settings, click Next.
+
+
+
+Create an SP connection
+Steps
+On the Connection Type screen, select the Browser SSO Profiles check box and select WS-Federation as the Protocol. If you are configuring the connection for active federation (for native client cases such as the Dynamics CRM plug-in for Outlook), select the WS-Trust STS check box. You must select SAML 1.1 as the Default Token Type.
+
+On the General Info screen, enter the CRM Web site in the Partner’s Realm field.
+
+For example, https://ping.crm.com/default.aspx
+
+Enter a value in the Connection Name field.
+
+On the Browser SSO screen, click Configure Browser SSO.
+
+On the Assertion Lifetime screen, update the lifetime of the assertion as needed. Note that Dynamics CRM uses the SAML token to determine the session lifetime; you may increase the Minutes After value to extend the CRM session lifetime beyond 5 minutes (the default value).
+
+On the Assertion Creation screen, click Configure Assertion Creation.
+
+On the Identity Mapping screen, select User Principal Name.
+
+On the Attribute Contract screen, extend the contract by adding upn and selecting http://schemas.xmlsoap.org/ws/2005/05/identity/claims as the attribute name format.
+
+
+
+
+Map an IdP adapter
+Steps
+Click Map New Adapter Instance and select the HTML Form IdP Adapter as the Adapter Instance.
+
+On the Assertion Mapping screen, select the option button to retrieve additional attributes from a data store including options to use alternate data stores and/or a failsafe mapping.
+
+Click Add Attribute Source and configure the LDAP data source, adding userPrincipalName as an additional attribute and including a filter value such as sAMAccountName=${username}.
+
+On the Attribute Contract Fulfillment screen, select Text as the Source for SAML_SUBJECT and enter an unused value. Select LDAP as the Source for upn and select userPrincipalName as the value.
+
+On the Failsafe Attribute Source screen, select the Abort the SSO Transaction option.
+
+Configure protocol settings
+Steps
+Click Configure Protocol Settings on the Protocol Settings screen
+
+Enter the CRM Web site as the Endpoint URL.
+
+For example:
+
+https://ping.crm.com/default.aspx
+Configure IdP token processor mapping
+Steps
+Click Map New Token Processor Instance and select a configured Username Token Processor as the Token Processor Instance.
+
+On the Attribute Retrieval screen, select the option to retrieve additional attributes from data stores to fulfill the attribute contract.
+
+In the Attribute Sources & User Lookup screen, configure the LDAP data store that will return the upn attribute for the corresponding user, adding userPrincipalName as an additional attribute and including a filter value such as sAMAccountName=${username}.
+
+On the Attribute Contract Fulfillment screen, select Text as the Source for SAML_SUBJECT and enter an unused value. Select LDAP as the Source for upn and select userPrincipalName as the value.
+
+Configure issuance criteria, if necessary.
+
+Configure credentials
+Steps
+Click Configure Credentials.
+
+Select the signing certificate you want to use.
+
+Select RSA SHA1 or RSA SHA256 as the signing algorithm on the Digital Signature Settings screen.
+
+This certificate can be self-signed and can be exported for use by the Dynamics CRM server.
+
+If the Dynamics CRM server is configured for token signature validation, export the signing certificate.
+
+You will import the certificate into the Dynamics CRM server (see Dynamics CRM configuration).
+
+Share the signing certificate with the Dynamics CRM server
+Steps
+Click Manage Certificates.
+
+Click Export on the Manage Digital Signing Certificates screen for the signing certificate you want to export.
+
+On the Export & Summary screen, click Export. Transfer the certificate to the Dynamics CRM server and import it into the appropriate Certificate store using the Microsoft Management Console Certificates Snap-in.
+
+See Enabling ADFS 2.0 Token Signing for more information on token signature validation (technet.microsoft.com/en-us/library/gg188574.aspx).
+
+Click Done until you return to the Digital Signature Settings screen.
+
+Use PingFederate to create a service provider (SP) connection for each Admin Node for SAML in your system. To speed up the process, you will import the SAML metadata from StorageGRID.
+
+Before you begin
+You have configured single sign-on for StorageGRID and you selected Ping Federate as the SSO type.
+
+You have entered sandbox mode in Grid Manager.
+
+You have the SP connection ID for each Admin Node in your system. You can find these values in the Admin Nodes detail table on the Configure SSO page.
+
+You have downloaded the SAML metadata for each Admin Node in your system.
+
+You have experience creating SP connections in PingFederate Server.
+
+You have the Administrator's Reference Guide for PingFederate Server. The PingFederate documentation provides detailed step-by-step instructions and explanations.
+
+You have the Admin permission for PingFederate Server.
+
+About this task
+These instructions summarize how to configure PingFederate Server version 10.3 as an SSO provider for StorageGRID. If you are using another version of PingFederate, you might need to adapt these instructions. Refer to the PingFederate Server documentation for detailed instructions for your release.
+
+Complete prerequisites in PingFederate
+Before you can create the SP connections you will use for StorageGRID, you must complete prerequisite tasks in PingFederate. You will use information from these prerequisites when you configure the SP connections.
+
+Create data store
+If you haven't already, create a data store to connect PingFederate to the AD FS LDAP server. Use the values you used when configuring identity federation in StorageGRID.
+
+Type: Directory (LDAP)
+
+LDAP Type: Active Directory
+
+Binary Attribute Name: Enter objectGUID on the LDAP Binary Attributes tab exactly as shown.
+
+Create password credential validator
+If you haven't already, create a password credential validator.
+
+Type: LDAP Username Password Credential Validator
+
+Data store: Select the data store you created.
+
+Search base: Enter information from LDAP (for example, DC=saml,DC=sgws).
+
+Search filter: sAMAccountName=${username}
+
+Scope: Subtree
+
+Create IdP adapter instance
+If you haven't already, create an IdP adapter instance.
+
+Steps
+Go to Authentication > Integration > IdP Adapters.
+
+Select Create New Instance.
+
+On the Type tab, select HTML Form IdP Adapter.
+
+On the IdP Adapter tab, select Add a new row to 'Credential Validators'.
+
+Select the password credential validator you created.
+
+On the Adapter Attributes tab, select the username attribute for Pseudonym.
+
+Select Save.
+
+Create or import signing certificate
+If you haven't already, create or import the signing certificate.
+
+Steps
+Go to Security > Signing & Decryption Keys & Certificates.
+
+Create or import the signing certificate.
+
+Create an SP connection in PingFederate
+When you create an SP connection in PingFederate, you import the SAML metadata you downloaded from StorageGRID for the Admin Node. The metadata file contains many of the specific values you need.
+
+Tip	You must create an SP connection for each Admin Node in your StorageGRID system, so that users can securely sign in to and out of any node. Use these instructions to create the first SP connection. Then, go to Create additional SP connections to create any additional connections you need.
+Choose SP connection type
+Steps
+Go to Applications > Integration > SP Connections.
+
+Select Create Connection.
+
+Select Do not use a template for this connection.
+
+Select Browser SSO Profiles and SAML 2.0 as the protocol.
+
+Import SP metadata
+Steps
+On the Import Metadata tab, select File.
+
+Choose the SAML metadata file you downloaded from the Configure SSO page for the Admin Node.
+
+Review the Metadata Summary and the information provided on the General Info tab.
+
+The Partner's Entity ID and the Connection Name are set to the StorageGRID SP connection ID. (for example, 10.96.105.200-DC1-ADM1-105-200). The Base URL is the IP of the StorageGRID Admin Node.
+
+Select Next.
+
+Configure IdP Browser SSO
+Steps
+From the Browser SSO tab, select Configure Browser SSO.
+
+On the SAML profiles tab, select the SP-initiated SSO, SP-initial SLO, IdP-initiated SSO, and IdP-initiated SLO options.
+
+Select Next.
+
+On the Assertion Lifetime tab, make no changes.
+
+On the Assertion Creation tab, select Configure Assertion Creation.
+
+On the Identity Mapping tab, select Standard.
+
+On the Attribute Contract tab, use the SAML_SUBJECT as the Attribute Contract and the unspecified name format that was imported.
+
+For Extend the Contract, select Delete to remove the urn:oid, which is not used.
+
+Map adapter instance
+Steps
+On the Authentication Source Mapping tab, select Map New Adapter Instance.
+
+On the Adapter instance tab, select the adapter instance you created.
+
+On the Mapping Method tab, select Retrieve Additional Attributes From a Data Store.
+
+On the Attribute Source & User Lookup tab, select Add Attribute Source.
+
+On the Data Store tab, provide a description and select the data store you added.
+
+On the LDAP Directory Search tab:
+
+Enter the Base DN, which should exactly match the value you entered in StorageGRID for the LDAP server.
+
+For the Search Scope, select Subtree.
+
+For the Root Object Class, search for and add either of these attributes: objectGUID or userPrincipalName.
+
+On the LDAP Binary Attribute Encoding Types tab, select Base64 for the objectGUID attribute.
+
+On the LDAP Filter tab, enter sAMAccountName=${username}.
+
+On the Attribute Contract Fulfillment tab, select LDAP (attribute) from the Source drop-down and select either objectGUID or userPrincipalName from the Value drop-down.
+
+Review and then save the attribute source.
+
+On the Failsave Attribute Source tab, select Abort the SSO Transaction.
+
+Review the summary and select Done.
+
+Select Done.
+
+Configure protocol settings
+Steps
+On the SP Connection > Browser SSO > Protocol Settings tab, select Configure Protocol Settings.
+
+On the Assertion Consumer Service URL tab, accept the default values, which were imported from the StorageGRID SAML metadata (POST for Binding and /api/saml-response for Endpoint URL).
+
+On the SLO Service URLs tab, accept the default values, which were imported from the StorageGRID SAML metadata (REDIRECT for Binding and /api/saml-logout for Endpoint URL.
+
+On the Allowable SAML Bindings tab, clear ARTIFACT and SOAP. Only POST and REDIRECT are required.
+
+On the Signature Policy tab, leave the Require Authn Requests to be Signed and Always Sign Assertion checkboxes selected.
+
+On the Encryption Policy tab, select None.
+
+Review the summary and select Done to save the protocol settings.
+
+Review the summary and select Done to save the Browser SSO settings.
+
+Configure credentials
+Steps
+From the SP Connection tab, select Credentials.
+
+From the Credentials tab, select Configure Credentials.
+
+Select the signing certificate you created or imported.
+
+Select Next to go to Manage Signature Verification Settings.
+
+On the Trust Model tab, select Unanchored.
+
+On the Signature Verification Certificate tab, review the signing certificate information, which was imported from the StorageGRID SAML metadata.
+
+Review the summary screens and select Save to save the SP connection.
+
+Create additional SP connections
+You can copy the first SP connection to create the SP connections you need for each Admin Node in your grid. You upload new metadata for each copy.
+
+Note	The SP connections for different Admin Nodes use identical settings, with the exception of the Partner's Entity ID, Base URL, Connection ID, Connection Name, Signature Verification, and SLO Response URL.
+Steps
+Select Action > Copy to create a copy of the initial SP connection for each additional Admin Node.
+
+Enter the Connection ID and Connection Name for the copy, and select Save.
+
+Choose the metadata file corresponding to the Admin Node:
+
+Select Action > Update with Metadata.
+
+Select Choose File and upload the metadata.
+
+Select Next.
+
+Select Save.
+
+Resolve the error due to the unused attribute:
+
+Select the new connection.
+
+Select Configure Browser SSO > Configure Assertion Creation > Attribute Contract.
+
+Delete the entry for urn:oid.
+
+Select Save.
+

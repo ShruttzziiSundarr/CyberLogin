@@ -6,6 +6,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { AppsListPage } from './pages/AppsListPage';
 import { AppDetailPage } from './pages/AppDetailPage';
 import { OnboardWizardPage } from './pages/OnboardWizardPage';
+import { IntegrationInfoPage } from './pages/IntegrationInfoPage';
 
 export function App() {
   return (
@@ -17,6 +18,7 @@ export function App() {
           <Route path="/apps" element={<AppsListPage />} />
           <Route path="/apps/:type/:id" element={<AppDetailPage />} />
           <Route path="/onboard" element={<OnboardWizardPage />} />
+          <Route path="/integration-info" element={<IntegrationInfoPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

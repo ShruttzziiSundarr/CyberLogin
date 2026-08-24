@@ -1,0 +1,63 @@
+services:
+  - type: web
+    name: sso-lab-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: PF_ADMIN_BASE_URL
+        sync: false
+      - key: PF_ADMIN_USER
+        sync: false
+      - key: PF_ADMIN_PASSWORD
+        sync: false
+      - key: PF_ADMIN_AUTH_MODE
+        value: basic
+      - key: PF_TLS_INSECURE
+        value: "false"
+      - key: PF_RUNTIME_BASE_URL
+        sync: false
+      - key: MOCK_PING
+        value: "true"
+      - key: FEATURE_MFA_POLICY_WRITE
+        value: "false"
+      - key: SP_ENTITY_ID
+        sync: false
+      - key: SP_BASE_URL
+        sync: false
+      - key: FRONTEND_BASE_URL
+        value: https://sso-lab-frontend.onrender.com
+      - key: SP_PRIVATE_KEY
+        sync: false
+      - key: SP_CERTIFICATE
+        sync: false
+      - key: PF_IDP_ENTITY_ID
+        sync: false
+      - key: PF_IDP_SSO_URL
+        sync: false
+      - key: PF_IDP_SLO_URL
+        sync: false
+      - key: PF_IDP_CERT
+        sync: false
+
+  - type: web
+    name: sso-lab-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    dockerBuildArgs:
+      VITE_API_BASE_URL: https://sso-lab-backend.onrender.com/api
