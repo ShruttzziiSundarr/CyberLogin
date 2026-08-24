@@ -66,7 +66,8 @@ platformRouter.get('/status', async (_req, res, next) => {
       passwordCredentialValidatorConfigured: (pcvs.items ?? []).length > 0,
       pingOneConnectionConfigured: (pingOneConnections.items ?? []).length > 0,
       signingKeysAvailable: (signingKeys.items ?? []).length > 0,
-      mfaPolicyWriteEnabled: env.FEATURE_MFA_POLICY_WRITE
+      mfaPolicyWriteEnabled: env.FEATURE_MFA_POLICY_WRITE,
+      oauthOnboardingEnabled: env.FEATURE_OAUTH_ONBOARDING
     });
   } catch (err) {
     next(err);

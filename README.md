@@ -70,6 +70,15 @@ interface simply leaves the seam for one. For end-to-end testing against real Pi
 behavior, point `PF_ADMIN_BASE_URL` at an actual PingFederate instance (a free trial /
 devops image works) instead.
 
+## Deployment (Render)
+
+Two Render Blueprint options are provided:
+
+- **`render.yaml`** (default) — a single combined service built from the root `Dockerfile`: the Express backend serves both `/api` and the built frontend from one URL. SAML-only — OAuth/OIDC onboarding is off (`FEATURE_OAUTH_ONBOARDING=false`).
+- **`render.two-service.yaml`** — the original two-service split (`backend/Dockerfile` + `frontend/Dockerfile` as separate web services), with OAuth/OIDC onboarding enabled alongside SAML.
+
+To deploy the combined blueprint: Render dashboard → New → Blueprint → select this repo and `render.yaml`. After the first deploy, set `SP_BASE_URL` and `FRONTEND_BASE_URL` (both `sync: false`) to the service's own assigned `*.onrender.com` URL — the UI and API share the same origin in this setup.
+
 ## Environment variables
 
 See [.env.example](.env.example) for the full list. Highlights:

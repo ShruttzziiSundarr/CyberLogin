@@ -1,3 +1,5 @@
+import path from 'path';
+import fs from 'fs';
 import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
@@ -8,6 +10,12 @@ import { env } from './config/env';
 import { logger } from './utils/logger';
 import { apiRouter } from './routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+
+// Present only in the combined single-container image (root Dockerfile), which
+// copies the frontend's built assets in here. Absent in the standalone
+// backend-only image (backend/Dockerfile), where the frontend is a separate service.
+const frontendDir = path.join(__dirname, '..', 'public');
+const hasFrontendBuild = fs.existsSync(path.join(frontendDir, 'index.html'));
 
 export function createApp() {
   const app = express();
@@ -48,17 +56,27 @@ export function createApp() {
 
   app.get('/healthz', (_req, res) => res.json({ status: 'ok' }));
 
-  app.get('/', (_req, res) =>
-    res.json({
-      service: 'sso-lab-backend',
-      status: 'ok',
-      message: 'This is the API server. The web UI is served by the frontend service.',
-      health: '/healthz',
-      api: '/api'
-    })
-  );
+  if (!hasFrontendBuild) {
+    app.get('/', (_req, res) =>
+      res.json({
+        service: 'sso-lab-backend',
+        status: 'ok',
+        message: 'This is the API server. The web UI is served by the frontend service.',
+        health: '/healthz',
+        api: '/api'
+      })
+    );
+  }
 
   app.use('/api', apiRouter);
+
+  if (hasFrontendBuild) {
+    app.use(express.static(frontendDir));
+    // React Router client-side routes (e.g. /apps, /onboard) have no matching
+    // file on disk; hand them the SPA shell so the router can take over.
+    // Never for /api/*, so an unmatched API route still 404s as JSON below.
+    app.get(/^(?!\/api\/).*/, (_req, res) => res.sendFile(path.join(frontendDir, 'index.html')));
+  }
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -12,6 +12,7 @@ export interface PlatformStatus {
   passwordCredentialValidator: boolean;
   pingOneConnection: boolean;
   signingKeys: boolean;
+  oauthOnboardingEnabled: boolean;
   [key: string]: boolean;
 }
 
