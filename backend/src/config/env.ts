@@ -40,6 +40,11 @@ const envSchema = z.object({
 
   FEATURE_MFA_POLICY_WRITE: boolFromString,
 
+  // Off by default: the OAuth/OIDC onboarding route and its frontend form are
+  // hidden, leaving SAML as the only onboarding protocol. Set to true to
+  // re-enable OAuth/OIDC onboarding.
+  FEATURE_OAUTH_ONBOARDING: boolFromString,
+
   // When true, all PingFederate admin API calls are served by an in-memory
   // mock instead of a real PF instance, so the whole portal works standalone
   // as a demo. Never enable in production.

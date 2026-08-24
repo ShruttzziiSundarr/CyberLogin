@@ -1,13 +1,12 @@
-# Single combined service: the root Dockerfile builds the frontend and
-# backend together, and the Express app serves both the UI and /api from one
-# process/URL. SAML-only (OAuth/OIDC onboarding is off, see FEATURE_OAUTH_ONBOARDING
-# below). For the two-service, OAuth-capable deployment, use render.two-service.yaml.
+# Two-service deployment (separate backend API + frontend web service), with
+# OAuth/OIDC onboarding enabled alongside SAML. For a single combined
+# SAML-only service instead, use the root render.yaml.
 services:
   - type: web
-    name: sso-lab
+    name: sso-lab-backend
     runtime: docker
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     plan: free
     envVars:
       - key: NODE_ENV
@@ -39,16 +38,13 @@ services:
       - key: FEATURE_MFA_POLICY_WRITE
         value: "false"
       - key: FEATURE_OAUTH_ONBOARDING
-        value: "false"
+        value: "true"
       - key: SP_ENTITY_ID
         sync: false
-      # Both of these should be set to this service's own Render URL (shown
-      # on this service's dashboard page after the first deploy) - the UI and
-      # API are served from the same origin here.
       - key: SP_BASE_URL
         sync: false
       - key: FRONTEND_BASE_URL
-        sync: false
+        value: https://sso-lab-frontend.onrender.com
       - key: SP_PRIVATE_KEY
         sync: false
       - key: SP_CERTIFICATE
@@ -61,3 +57,12 @@ services:
         sync: false
       - key: PF_IDP_CERT
         sync: false
+
+  - type: web
+    name: sso-lab-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    dockerBuildArgs:
+      VITE_API_BASE_URL: https://sso-lab-backend.onrender.com/api
