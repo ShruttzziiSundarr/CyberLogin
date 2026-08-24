@@ -48,6 +48,16 @@ export function createApp() {
 
   app.get('/healthz', (_req, res) => res.json({ status: 'ok' }));
 
+  app.get('/', (_req, res) =>
+    res.json({
+      service: 'sso-lab-backend',
+      status: 'ok',
+      message: 'This is the API server. The web UI is served by the frontend service.',
+      health: '/healthz',
+      api: '/api'
+    })
+  );
+
   app.use('/api', apiRouter);
 
   app.use(notFoundHandler);
