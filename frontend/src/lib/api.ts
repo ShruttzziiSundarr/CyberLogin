@@ -53,6 +53,11 @@ export async function getIntegrationInfo(): Promise<IntegrationInfo> {
   return data;
 }
 
+export async function getSpMetadataXml(): Promise<string> {
+  const { data } = await httpClient.get<string>('/saml/metadata', { responseType: 'text' });
+  return data;
+}
+
 // --- SSO test settings ---
 
 export async function getSamlIdpSettings(): Promise<SamlIdpSettingsResponse> {
