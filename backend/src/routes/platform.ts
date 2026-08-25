@@ -6,6 +6,7 @@ import { ApiErrors } from '../utils/errors';
 import { csrfProtection } from '../middleware/csrf';
 import { computeOAuthRuntimeEndpoints, computeSamlRuntimeEndpoints } from '../services/runtimeEndpoints';
 import { samlEndpoints, spCertificate, isIdpConfigured } from '../saml/spConfig';
+import { getSamlSettings } from '../saml/samlSettings';
 
 export const platformRouter = Router();
 
@@ -13,11 +14,12 @@ export const platformRouter = Router();
 // (Applications > Integration > SP Connections), plus a reference of PingFederate's own
 // OAuth 2.0 / OIDC authorization-server endpoints used when onboarding OAuth client apps.
 platformRouter.get('/integration-info', (_req, res) => {
-  const pfEndpoints = computeSamlRuntimeEndpoints(env.SP_ENTITY_ID);
+  const settings = getSamlSettings();
+  const pfEndpoints = computeSamlRuntimeEndpoints(settings.spEntityId);
 
   res.json({
     saml: {
-      spEntityId: env.SP_ENTITY_ID,
+      spEntityId: settings.spEntityId,
       acsUrl: samlEndpoints.acs,
       acsBinding: 'HTTP-POST',
       sloUrl: samlEndpoints.sloRequest,
@@ -31,9 +33,9 @@ platformRouter.get('/integration-info', (_req, res) => {
       spCertificatePem: spCertificate,
       idp: {
         configured: isIdpConfigured(),
-        entityId: env.PF_IDP_ENTITY_ID || null,
-        ssoUrl: env.PF_IDP_SSO_URL || null,
-        sloUrl: env.PF_IDP_SLO_URL || null
+        entityId: settings.idpEntityId || null,
+        ssoUrl: settings.idpSsoUrl || null,
+        sloUrl: settings.idpSloUrl || null
       },
       // Where PingFederate's own IdP endpoints for this SP connection are expected to live
       // once the SP Connection above is created, computed from PF_RUNTIME_BASE_URL.

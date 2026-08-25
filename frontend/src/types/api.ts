@@ -16,6 +16,19 @@ export interface PlatformStatus {
   [key: string]: boolean;
 }
 
+export interface SamlIdpSettings {
+  spEntityId: string;
+  idpEntityId: string;
+  idpSsoUrl: string;
+  idpSloUrl: string;
+  idpCert: string;
+}
+
+export interface SamlIdpSettingsResponse {
+  settings: SamlIdpSettings;
+  idpConfigured: boolean;
+}
+
 export interface CatalogItem {
   id: string;
   name: string;

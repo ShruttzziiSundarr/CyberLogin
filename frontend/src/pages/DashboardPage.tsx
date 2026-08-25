@@ -15,10 +15,10 @@ export function DashboardPage() {
         </div>
         <div className="mt-3 flex flex-wrap gap-3">
           <Link
-            to="/onboard"
+            to="/integration-info"
             className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
           >
-            Onboard new app
+            Test SSO
           </Link>
           <Link
             to="/apps"

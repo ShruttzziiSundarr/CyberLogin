@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { sp, spCertificate, isIdpConfigured } from '../saml/spConfig';
+import { getSamlClient, spCertificate, isIdpConfigured } from '../saml/spConfig';
 import { generateCsrfToken } from '../middleware/csrf';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
@@ -9,7 +9,7 @@ export const samlRouter = Router();
 // SP metadata: give this XML (or the URL) to PingFederate when creating the
 // SP Connection so it knows this app's ACS URL, entity ID, and signing cert.
 samlRouter.get('/metadata', (_req, res) => {
-  const metadata = sp.generateServiceProviderMetadata(spCertificate, spCertificate);
+  const metadata = getSamlClient().generateServiceProviderMetadata(spCertificate, spCertificate);
   res.type('application/xml').send(metadata);
 });
 
@@ -19,14 +19,14 @@ samlRouter.get('/login', async (req, res, next) => {
     return res.status(503).json({
       error: {
         code: 'idp_not_configured',
-        message: 'PF_IDP_SSO_URL / PF_IDP_CERT are not set. Import this SP\'s metadata into PingFederate and fill in the IdP values first.'
+        message: 'The IdP SSO URL / certificate are not set. Import this SP\'s metadata into your IdP and fill in the IdP values on the SSO settings page first.'
       }
     });
   }
   try {
     const requested = req.query.redirect;
     const relayState = typeof requested === 'string' && requested.startsWith('/') ? requested : '/';
-    const url = await sp.getAuthorizeUrlAsync(relayState, undefined, {});
+    const url = await getSamlClient().getAuthorizeUrlAsync(relayState, undefined, {});
     res.redirect(url);
   } catch (err) {
     next(err);
@@ -37,7 +37,7 @@ samlRouter.get('/login', async (req, res, next) => {
 // the user authenticates.
 samlRouter.post('/acs', async (req, res, next) => {
   try {
-    const { profile } = await sp.validatePostResponseAsync(req.body);
+    const { profile } = await getSamlClient().validatePostResponseAsync(req.body);
     if (!profile?.nameID) {
       return res.status(401).json({ error: { code: 'saml_no_subject', message: 'Assertion did not include a subject' } });
     }
@@ -77,7 +77,7 @@ samlRouter.get('/slo', async (req, res, next) => {
       if (!user) {
         return res.redirect('/');
       }
-      const url = await sp.getLogoutUrlAsync({ nameID: user.username, nameIDFormat: null } as any, '/', {});
+      const url = await getSamlClient().getLogoutUrlAsync({ nameID: user.username, nameIDFormat: null } as any, '/', {});
       res.redirect(url);
     });
   } catch (err) {
