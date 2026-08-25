@@ -15,7 +15,8 @@ const emptySettings: SamlIdpSettings = {
   idpEntityId: '',
   idpSsoUrl: '',
   idpSloUrl: '',
-  idpCert: ''
+  idpCert: '',
+  requiredAttributes: []
 };
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -44,9 +45,13 @@ function IdpSettingsForm() {
   const { data, isLoading, isError, error } = useSamlIdpSettings();
   const updateMutation = useUpdateSamlIdpSettings();
   const [form, setForm] = useState<SamlIdpSettings>(emptySettings);
+  const [requiredAttributesText, setRequiredAttributesText] = useState('');
 
   useEffect(() => {
-    if (data?.settings) setForm(data.settings);
+    if (data?.settings) {
+      setForm(data.settings);
+      setRequiredAttributesText(data.settings.requiredAttributes.join('\n'));
+    }
   }, [data?.settings]);
 
   if (isLoading) {
@@ -69,7 +74,11 @@ function IdpSettingsForm() {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        updateMutation.mutate(form);
+        const requiredAttributes = requiredAttributesText
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        updateMutation.mutate({ ...form, requiredAttributes });
       }}
       className="space-y-4"
     >
@@ -123,6 +132,23 @@ function IdpSettingsForm() {
           placeholder="-----BEGIN CERTIFICATE-----..."
           className="w-full rounded border border-slate-300 px-3 py-2 font-mono text-xs"
         />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+          Required SAML attributes (one per line)
+        </label>
+        <textarea
+          value={requiredAttributesText}
+          onChange={(e) => setRequiredAttributesText(e.target.value)}
+          rows={3}
+          placeholder="email&#10;department"
+          className="w-full rounded border border-slate-300 px-3 py-2 font-mono text-xs"
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          Exact, case-sensitive attribute names. Login is rejected if the assertion is missing any
+          of these. Leave empty to only require NameID.
+        </p>
       </div>
 
       <button

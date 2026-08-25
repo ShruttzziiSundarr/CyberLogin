@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getSamlClient, spCertificate, isIdpConfigured } from '../saml/spConfig';
+import { getSamlSettings } from '../saml/samlSettings';
 import { generateCsrfToken } from '../middleware/csrf';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
@@ -42,10 +43,26 @@ samlRouter.post('/acs', async (req, res, next) => {
       return res.status(401).json({ error: { code: 'saml_no_subject', message: 'Assertion did not include a subject' } });
     }
 
+    const { requiredAttributes } = getSamlSettings();
+    const missingAttributes = requiredAttributes.filter((name) => {
+      const value = profile[name];
+      return value === undefined || value === null || value === '';
+    });
+    if (missingAttributes.length > 0) {
+      logger.warn({ nameID: profile.nameID, missingAttributes }, 'SAML assertion missing required attributes');
+      return res.status(401).json({
+        error: {
+          code: 'saml_missing_attributes',
+          message: `Assertion is missing required attribute(s): ${missingAttributes.join(', ')}`
+        }
+      });
+    }
+    const attributes = Object.fromEntries(requiredAttributes.map((name) => [name, profile[name]]));
+
     req.session.regenerate((err) => {
       if (err) return next(err);
       try {
-        req.session.user = { username: profile.nameID as string };
+        req.session.user = { username: profile.nameID as string, attributes };
         // The frontend recovers the session + a fresh CSRF token via GET /api/auth/session
         // once it lands on this redirect (same pattern as a page reload). overwrite: the
         // session ID just changed, so any stale CSRF cookie must not be reused/validated.

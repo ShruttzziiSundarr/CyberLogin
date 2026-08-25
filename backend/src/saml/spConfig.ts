@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { SAML, SamlConfig } from '@node-saml/node-saml';
+import { SAML, SamlConfig, ValidateInResponseTo, CacheProvider } from '@node-saml/node-saml';
 import { env } from '../config/env';
 import { getSamlSettings } from './samlSettings';
 
@@ -8,6 +8,42 @@ function readCert(filePath: string): string {
   const resolved = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
   return fs.readFileSync(resolved, 'utf8');
 }
+
+const REQUEST_ID_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours, matches node-saml's own default
+
+// getSamlClient() below builds a fresh SAML instance per call (so edited IdP
+// settings take effect immediately without a restart) - but validateInResponseTo
+// needs the request ID saved during /login to still be there when /acs validates
+// it later, which would break if each call got its own throwaway cache. This
+// provider is a module-level singleton shared across every SAML instance instead.
+class SharedRequestIdCache implements CacheProvider {
+  private store = new Map<string, { value: string; createdAt: number }>();
+
+  async saveAsync(key: string, value: string) {
+    const item = { value, createdAt: Date.now() };
+    this.store.set(key, item);
+    return item;
+  }
+
+  async getAsync(key: string) {
+    const item = this.store.get(key);
+    if (!item) return null;
+    if (Date.now() - item.createdAt > REQUEST_ID_TTL_MS) {
+      this.store.delete(key);
+      return null;
+    }
+    return item.value;
+  }
+
+  async removeAsync(key: string | null) {
+    if (!key) return null;
+    const item = this.store.get(key);
+    this.store.delete(key);
+    return item?.value ?? null;
+  }
+}
+
+const requestIdCache = new SharedRequestIdCache();
 
 // Inline PEM env vars win (used where certs/ isn't shipped, e.g. Render); otherwise
 // fall back to the on-disk dev keypair generated into backend/certs/. The SP's own
@@ -49,7 +85,13 @@ export function getSamlClient(): SAML {
     wantAssertionsSigned: true,
     wantAuthnResponseSigned: true,
     identifierFormat: 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
-    disableRequestedAuthnContext: true
+    disableRequestedAuthnContext: true,
+    // 'ifPresent' (not 'always') so a genuinely IdP-initiated response - which has
+    // no InResponseTo at all - still validates, while an SP-initiated response is
+    // required to match a request this SP actually sent (via requestIdCache below).
+    validateInResponseTo: ValidateInResponseTo.ifPresent,
+    requestIdExpirationPeriodMs: REQUEST_ID_TTL_MS,
+    cacheProvider: requestIdCache
   };
 
   return new SAML(samlConfig);
