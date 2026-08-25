@@ -24,12 +24,7 @@ platformRouter.get('/integration-info', (_req, res) => {
       acsBinding: 'HTTP-POST',
       sloUrl: samlEndpoints.sloRequest,
       spMetadataUrl: samlEndpoints.metadata,
-      nameIdFormatsSupported: [
-        'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
-        'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent',
-        'urn:oasis:names:tc:SAML:2.0:nameid-format:transient',
-        'urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified'
-      ],
+      nameIdFormatsSupported: ['urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified'],
       spCertificatePem: spCertificate,
       idp: {
         configured: isIdpConfigured(),

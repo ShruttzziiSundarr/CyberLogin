@@ -84,7 +84,7 @@ export function getSamlClient(): SAML {
     signatureAlgorithm: 'sha256',
     wantAssertionsSigned: true,
     wantAuthnResponseSigned: true,
-    identifierFormat: 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
+    identifierFormat: 'urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified',
     disableRequestedAuthnContext: true,
     // 'ifPresent' (not 'always') so a genuinely IdP-initiated response - which has
     // no InResponseTo at all - still validates, while an SP-initiated response is
