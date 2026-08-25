@@ -4,6 +4,7 @@ import { csrfProtection } from '../middleware/csrf';
 import { ApiErrors } from '../utils/errors';
 import { getSamlSettings, updateSamlSettings } from '../saml/samlSettings';
 import { isIdpConfigured } from '../saml/spConfig';
+import { parseIdpMetadataXml } from '../services/samlMetadataParser';
 
 export const idpSettingsRouter = Router();
 
@@ -35,4 +36,22 @@ idpSettingsRouter.put('/', csrfProtection, (req, res, next) => {
   }
   const updated = updateSamlSettings(parsed.data);
   res.json({ settings: updated, idpConfigured: isIdpConfigured() });
+});
+
+const parseMetadataSchema = z.object({
+  metadataXml: z.string().min(1, 'Metadata XML is required')
+});
+
+// Parses uploaded/pasted IdP metadata for prefill only - never writes to
+// settings itself, so the admin can review/edit before clicking Save.
+idpSettingsRouter.post('/parse-metadata', csrfProtection, (req, res, next) => {
+  const parsed = parseMetadataSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return next(ApiErrors.validation(parsed.error.issues.map((i) => i.message).join('; ')));
+  }
+  try {
+    res.json(parseIdpMetadataXml(parsed.data.metadataXml));
+  } catch (err) {
+    next(err);
+  }
 });

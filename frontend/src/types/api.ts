@@ -30,6 +30,13 @@ export interface SamlIdpSettingsResponse {
   idpConfigured: boolean;
 }
 
+export interface ParsedIdpMetadata {
+  entityId?: string;
+  ssoUrl?: string;
+  sloUrl?: string;
+  cert?: string;
+}
+
 export interface CatalogItem {
   id: string;
   name: string;
