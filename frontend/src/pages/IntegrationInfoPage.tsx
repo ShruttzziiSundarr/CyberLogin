@@ -4,6 +4,7 @@ import { useSamlIdpSettings, useUpdateSamlIdpSettings } from '../hooks/useSamlId
 import { CopyField } from '../components/CopyField';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { normalizeApiError } from '../lib/httpClient';
+import { getSpMetadataXml } from '../lib/api';
 import type { SamlIdpSettings } from '../types/api';
 
 type Tab = 'saml' | 'oauth';
@@ -38,6 +39,43 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
       <span className={`h-1.5 w-1.5 rounded-full ${ok ? 'bg-emerald-600' : 'bg-amber-600'}`} />
       {label}
     </span>
+  );
+}
+
+function DownloadSpMetadataButton() {
+  const [state, setState] = useState<'idle' | 'downloading' | 'error'>('idle');
+
+  async function handleDownload() {
+    setState('downloading');
+    try {
+      const xml = await getSpMetadataXml();
+      const blob = new Blob([xml], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'sp-metadata.xml';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setState('idle');
+    } catch {
+      setState('error');
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={state === 'downloading'}
+        className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+      >
+        {state === 'downloading' ? 'Downloading...' : 'Download SP metadata (.xml)'}
+      </button>
+      {state === 'error' && <span className="text-xs text-red-600">Download failed - try again.</span>}
+    </div>
   );
 }
 
@@ -255,6 +293,7 @@ export function IntegrationInfoPage() {
             </div>
             <CopyField label="Single Logout (SLO) URL" value={data.saml.sloUrl} />
             <CopyField label="SP Metadata URL" value={data.saml.spMetadataUrl} />
+            <DownloadSpMetadataButton />
             <div>
               <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
                 Supported NameID formats
