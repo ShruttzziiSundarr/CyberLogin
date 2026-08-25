@@ -22,6 +22,7 @@ export interface SamlIdpSettings {
   idpSsoUrl: string;
   idpSloUrl: string;
   idpCert: string;
+  requiredAttributes: string[];
 }
 
 export interface SamlIdpSettingsResponse {

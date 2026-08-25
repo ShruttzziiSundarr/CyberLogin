@@ -6,6 +6,10 @@ export interface SamlIdpSettings {
   idpSsoUrl: string;
   idpSloUrl: string;
   idpCert: string;
+  // Attribute names (exact, case-sensitive) that must be present in the SAML
+  // assertion for login to succeed - e.g. "email", "department". Empty means
+  // no requirement beyond NameID, which is always required.
+  requiredAttributes: string[];
 }
 
 // In-memory only, seeded from env vars at startup: lets the SSO test page
@@ -16,7 +20,8 @@ let settings: SamlIdpSettings = {
   idpEntityId: env.PF_IDP_ENTITY_ID,
   idpSsoUrl: env.PF_IDP_SSO_URL,
   idpSloUrl: env.PF_IDP_SLO_URL,
-  idpCert: env.PF_IDP_CERT
+  idpCert: env.PF_IDP_CERT,
+  requiredAttributes: []
 };
 
 export function getSamlSettings(): SamlIdpSettings {

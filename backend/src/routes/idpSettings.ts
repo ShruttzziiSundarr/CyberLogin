@@ -24,7 +24,8 @@ const updateSchema = z.object({
   idpEntityId: z.string().optional().default(''),
   idpSsoUrl: optionalUrl('IdP SSO URL must be a valid URL'),
   idpSloUrl: optionalUrl('IdP SLO URL must be a valid URL'),
-  idpCert: z.string().optional().default('')
+  idpCert: z.string().optional().default(''),
+  requiredAttributes: z.array(z.string().min(1)).optional().default([])
 });
 
 idpSettingsRouter.put('/', csrfProtection, (req, res, next) => {
