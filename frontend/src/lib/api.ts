@@ -8,6 +8,7 @@ import type {
   LoginRequest,
   OAuthOnboardRequest,
   OAuthOnboardResponse,
+  ParsedIdpMetadata,
   PlatformStatus,
   SamlIdpSettings,
   SamlIdpSettingsResponse,
@@ -67,6 +68,11 @@ export async function getSamlIdpSettings(): Promise<SamlIdpSettingsResponse> {
 
 export async function updateSamlIdpSettings(body: SamlIdpSettings): Promise<SamlIdpSettingsResponse> {
   const { data } = await httpClient.put<SamlIdpSettingsResponse>('/idp-settings', body);
+  return data;
+}
+
+export async function parseIdpMetadataXml(metadataXml: string): Promise<ParsedIdpMetadata> {
+  const { data } = await httpClient.post<ParsedIdpMetadata>('/idp-settings/parse-metadata', { metadataXml });
   return data;
 }
 

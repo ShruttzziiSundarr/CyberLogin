@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntegrationInfo } from '../hooks/useIntegrationInfo';
 import { useSamlIdpSettings, useUpdateSamlIdpSettings } from '../hooks/useSamlIdpSettings';
 import { CopyField } from '../components/CopyField';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { normalizeApiError } from '../lib/httpClient';
-import { getSpMetadataXml } from '../lib/api';
+import { getSpMetadataXml, parseIdpMetadataXml } from '../lib/api';
 import type { SamlIdpSettings } from '../types/api';
 
 type Tab = 'saml' | 'oauth';
@@ -84,6 +84,11 @@ function IdpSettingsForm() {
   const updateMutation = useUpdateSamlIdpSettings();
   const [form, setForm] = useState<SamlIdpSettings>(emptySettings);
   const [requiredAttributesText, setRequiredAttributesText] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [metadataParse, setMetadataParse] = useState<{ status: 'idle' | 'parsing' | 'error'; message: string | null }>({
+    status: 'idle',
+    message: null,
+  });
 
   useEffect(() => {
     if (data?.settings) {
@@ -98,6 +103,31 @@ function IdpSettingsForm() {
 
   if (isError) {
     return <ErrorBanner {...normalizeApiError(error)} />;
+  }
+
+  async function handleMetadataUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const xml = await file.text();
+    e.target.value = '';
+    setMetadataParse({ status: 'parsing', message: null });
+    try {
+      const parsed = await parseIdpMetadataXml(xml);
+      setForm((f) => ({
+        ...f,
+        idpEntityId: parsed.entityId ?? f.idpEntityId,
+        idpSsoUrl: parsed.ssoUrl ?? f.idpSsoUrl,
+        idpSloUrl: parsed.sloUrl ?? f.idpSloUrl,
+        idpCert: parsed.cert ?? f.idpCert,
+      }));
+      const filled = Object.values(parsed).filter(Boolean).length;
+      setMetadataParse({
+        status: 'idle',
+        message: `Prefilled ${filled} field(s) from ${file.name}. Review before saving.`,
+      });
+    } catch (err) {
+      setMetadataParse({ status: 'error', message: normalizeApiError(err).message });
+    }
   }
 
   function field<K extends keyof SamlIdpSettings>(key: K) {
@@ -126,6 +156,31 @@ function IdpSettingsForm() {
           Saved. Takes effect immediately for testing (resets to env var defaults if the service restarts).
         </p>
       )}
+
+      <div className="rounded-md border border-dashed border-slate-300 p-3">
+        <label className="block text-sm font-medium text-slate-700">
+          Upload IdP metadata (.xml) <span className="text-slate-400">(optional)</span>
+        </label>
+        <p className="mt-1 text-xs text-slate-500">
+          Upload your IdP's (e.g. PingFederate's) metadata XML to auto-fill the fields below. Nothing is
+          saved until you click "Save IdP settings".
+        </p>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".xml,text/xml"
+          onChange={handleMetadataUpload}
+          disabled={metadataParse.status === 'parsing'}
+          className="mt-2 text-sm"
+        />
+        {metadataParse.status === 'parsing' && <p className="mt-2 text-xs text-slate-500">Parsing...</p>}
+        {metadataParse.status === 'error' && (
+          <p className="mt-2 text-xs text-red-600">Could not parse metadata: {metadataParse.message}</p>
+        )}
+        {metadataParse.status === 'idle' && metadataParse.message && (
+          <p className="mt-2 text-xs text-emerald-700">{metadataParse.message}</p>
+        )}
+      </div>
 
       <div>
         <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
