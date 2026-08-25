@@ -20,6 +20,12 @@ const hasFrontendBuild = fs.existsSync(path.join(frontendDir, 'index.html'));
 export function createApp() {
   const app = express();
 
+  // Render (and most PaaS) terminate TLS at a proxy and forward plain HTTP to
+  // the container, so without this Express sees every request as insecure
+  // (req.secure === false) and silently refuses to ever set cookie.secure
+  // cookies (the session cookie), even though the browser really is on HTTPS.
+  app.set('trust proxy', 1);
+
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(
