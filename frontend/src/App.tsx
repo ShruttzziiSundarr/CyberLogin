@@ -5,7 +5,6 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AppsListPage } from './pages/AppsListPage';
 import { AppDetailPage } from './pages/AppDetailPage';
-import { OnboardWizardPage } from './pages/OnboardWizardPage';
 import { IntegrationInfoPage } from './pages/IntegrationInfoPage';
 
 export function App() {
@@ -17,7 +16,6 @@ export function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/apps" element={<AppsListPage />} />
           <Route path="/apps/:type/:id" element={<AppDetailPage />} />
-          <Route path="/onboard" element={<OnboardWizardPage />} />
           <Route path="/integration-info" element={<IntegrationInfoPage />} />
         </Route>
       </Route>

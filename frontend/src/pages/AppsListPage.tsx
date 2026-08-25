@@ -24,10 +24,10 @@ export function AppsListPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-slate-900">Apps</h1>
         <Link
-          to="/onboard"
+          to="/integration-info"
           className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
         >
-          Onboard new app
+          Test SSO
         </Link>
       </div>
 

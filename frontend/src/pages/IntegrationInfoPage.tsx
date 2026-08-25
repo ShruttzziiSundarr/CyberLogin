@@ -1,10 +1,22 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useIntegrationInfo } from '../hooks/useIntegrationInfo';
+import { useSamlIdpSettings, useUpdateSamlIdpSettings } from '../hooks/useSamlIdpSettings';
 import { CopyField } from '../components/CopyField';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { normalizeApiError } from '../lib/httpClient';
+import type { SamlIdpSettings } from '../types/api';
 
 type Tab = 'saml' | 'oauth';
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api';
+
+const emptySettings: SamlIdpSettings = {
+  spEntityId: '',
+  idpEntityId: '',
+  idpSsoUrl: '',
+  idpSloUrl: '',
+  idpCert: ''
+};
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -28,6 +40,102 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
+function IdpSettingsForm() {
+  const { data, isLoading, isError, error } = useSamlIdpSettings();
+  const updateMutation = useUpdateSamlIdpSettings();
+  const [form, setForm] = useState<SamlIdpSettings>(emptySettings);
+
+  useEffect(() => {
+    if (data?.settings) setForm(data.settings);
+  }, [data?.settings]);
+
+  if (isLoading) {
+    return <p className="text-sm text-slate-500">Loading IdP settings...</p>;
+  }
+
+  if (isError) {
+    return <ErrorBanner {...normalizeApiError(error)} />;
+  }
+
+  function field<K extends keyof SamlIdpSettings>(key: K) {
+    return {
+      value: form[key],
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+        setForm((f) => ({ ...f, [key]: e.target.value })),
+    };
+  }
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        updateMutation.mutate(form);
+      }}
+      className="space-y-4"
+    >
+      {updateMutation.isError && <ErrorBanner {...normalizeApiError(updateMutation.error)} />}
+      {updateMutation.isSuccess && (
+        <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          Saved. Takes effect immediately for testing (resets to env var defaults if the service restarts).
+        </p>
+      )}
+
+      <div>
+        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+          SP Entity ID
+        </label>
+        <input
+          {...field('spEntityId')}
+          required
+          className="w-full rounded border border-slate-300 px-3 py-2 text-sm font-mono"
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+            IdP Entity ID
+          </label>
+          <input {...field('idpEntityId')} className="w-full rounded border border-slate-300 px-3 py-2 text-sm font-mono" />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+            IdP SSO URL
+          </label>
+          <input {...field('idpSsoUrl')} className="w-full rounded border border-slate-300 px-3 py-2 text-sm font-mono" />
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+          IdP SLO URL
+        </label>
+        <input {...field('idpSloUrl')} className="w-full rounded border border-slate-300 px-3 py-2 text-sm font-mono" />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+          IdP signing certificate (PEM)
+        </label>
+        <textarea
+          {...field('idpCert')}
+          rows={8}
+          placeholder="-----BEGIN CERTIFICATE-----..."
+          className="w-full rounded border border-slate-300 px-3 py-2 font-mono text-xs"
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={updateMutation.isPending}
+        className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+      >
+        {updateMutation.isPending ? 'Saving...' : 'Save IdP settings'}
+      </button>
+    </form>
+  );
+}
+
 export function IntegrationInfoPage() {
   const { data, isLoading, isError, error } = useIntegrationInfo();
   const [tab, setTab] = useState<Tab>('saml');
@@ -43,11 +151,10 @@ export function IntegrationInfoPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900">Integration info</h1>
+        <h1 className="text-lg font-semibold text-slate-900">SSO testing</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Everything a PingFederate administrator needs to trust this app as a SAML 2.0 Service
-          Provider, plus the OAuth 2.0 / OIDC authorization-server endpoints PingFederate exposes
-          for onboarded client apps.
+          Edit the IdP this app trusts, kick off SSO/SLO to try different test cases, and grab the
+          SP metadata to hand to an IdP when registering this app as a relying party.
         </p>
       </div>
 
@@ -74,7 +181,47 @@ export function IntegrationInfoPage() {
 
       {tab === 'saml' && (
         <div className="space-y-6">
-          <SectionCard title="Service Provider (this app)">
+          <SectionCard title="Run a test login">
+            <StatusPill
+              ok={data.saml.idp.configured}
+              label={data.saml.idp.configured ? 'IdP configured — ready to test' : 'IdP not configured yet'}
+            />
+            {!data.saml.idp.configured && (
+              <p className="text-xs text-slate-500">
+                Fill in the IdP SSO URL and certificate below first, then these links will work.
+              </p>
+            )}
+            <div className="flex flex-wrap gap-3">
+              <a
+                href={`${apiBaseUrl}/saml/login`}
+                aria-disabled={!data.saml.idp.configured}
+                className={`rounded-md border px-4 py-2 text-sm font-semibold ${
+                  data.saml.idp.configured
+                    ? 'border-slate-900 bg-slate-900 text-white hover:bg-slate-800'
+                    : 'pointer-events-none border-slate-200 bg-slate-100 text-slate-400'
+                }`}
+              >
+                Start SSO login
+              </a>
+              <a
+                href={`${apiBaseUrl}/saml/slo`}
+                aria-disabled={!data.saml.idp.configured}
+                className={`rounded-md border px-4 py-2 text-sm font-semibold ${
+                  data.saml.idp.configured
+                    ? 'border-slate-300 text-slate-700 hover:bg-slate-50'
+                    : 'pointer-events-none border-slate-200 text-slate-400'
+                }`}
+              >
+                Trigger SLO
+              </a>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Identity Provider settings (editable)">
+            <IdpSettingsForm />
+          </SectionCard>
+
+          <SectionCard title="Service Provider (this app) — for the IdP's relying-party setup">
             <CopyField label="SP Entity ID" value={data.saml.spEntityId} />
             <div className="grid gap-3 sm:grid-cols-2">
               <CopyField label="Assertion Consumer Service (ACS) URL" value={data.saml.acsUrl} />
@@ -106,25 +253,6 @@ export function IntegrationInfoPage() {
                 onFocus={(e) => e.currentTarget.select()}
               />
             </details>
-          </SectionCard>
-
-          <SectionCard title="Identity Provider (PingFederate)">
-            <StatusPill
-              ok={data.saml.idp.configured}
-              label={data.saml.idp.configured ? 'IdP connection configured' : 'IdP not yet configured'}
-            />
-            {!data.saml.idp.configured && (
-              <p className="text-xs text-slate-500">
-                Import the SP metadata above into PingFederate (Applications &gt; Integration &gt; SP
-                Connections &gt; Create Connection), then set PF_IDP_ENTITY_ID / PF_IDP_SSO_URL /
-                PF_IDP_SLO_URL / PF_IDP_CERT in this app's environment.
-              </p>
-            )}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <CopyField label="IdP Entity ID" value={data.saml.idp.entityId ?? 'not set'} />
-              <CopyField label="IdP SSO URL" value={data.saml.idp.ssoUrl ?? 'not set'} />
-            </div>
-            <CopyField label="IdP SLO URL" value={data.saml.idp.sloUrl ?? 'not set'} />
           </SectionCard>
 
           <SectionCard title="Expected PingFederate runtime endpoints (reference)">
@@ -172,10 +300,6 @@ export function IntegrationInfoPage() {
                 </span>
               ))}
             </div>
-            <p className="text-xs text-slate-500">
-              Per-client client ID, secret, redirect URIs, and scopes are issued when you onboard
-              an OAuth app — see the onboarding wizard.
-            </p>
           </SectionCard>
         </div>
       )}

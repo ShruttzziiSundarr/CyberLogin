@@ -9,6 +9,8 @@ import type {
   OAuthOnboardRequest,
   OAuthOnboardResponse,
   PlatformStatus,
+  SamlIdpSettings,
+  SamlIdpSettingsResponse,
   SamlOnboardRequest,
   SamlOnboardResponse,
 } from '../types/api';
@@ -48,6 +50,18 @@ export async function getPlatformStatus(): Promise<PlatformStatus> {
 
 export async function getIntegrationInfo(): Promise<IntegrationInfo> {
   const { data } = await httpClient.get<IntegrationInfo>('/platform/integration-info');
+  return data;
+}
+
+// --- SSO test settings ---
+
+export async function getSamlIdpSettings(): Promise<SamlIdpSettingsResponse> {
+  const { data } = await httpClient.get<SamlIdpSettingsResponse>('/idp-settings');
+  return data;
+}
+
+export async function updateSamlIdpSettings(body: SamlIdpSettings): Promise<SamlIdpSettingsResponse> {
+  const { data } = await httpClient.put<SamlIdpSettingsResponse>('/idp-settings', body);
   return data;
 }
 

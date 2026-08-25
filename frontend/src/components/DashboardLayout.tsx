@@ -30,11 +30,8 @@ export function DashboardLayout() {
               <NavLink to="/apps" className={navItemClass}>
                 Apps
               </NavLink>
-              <NavLink to="/onboard" className={navItemClass}>
-                Onboard new app
-              </NavLink>
               <NavLink to="/integration-info" className={navItemClass}>
-                Integration info
+                SSO testing
               </NavLink>
             </nav>
           </div>

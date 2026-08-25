@@ -6,6 +6,7 @@ import { onboardOAuthRouter } from './onboardOAuth';
 import { onboardSamlRouter } from './onboardSaml';
 import { appsRouter } from './apps';
 import { samlRouter } from './saml';
+import { idpSettingsRouter } from './idpSettings';
 import { requireAuth } from '../middleware/auth';
 import { env } from '../config/env';
 
@@ -21,6 +22,7 @@ apiRouter.use('/saml', samlRouter);
 apiRouter.use(requireAuth);
 
 apiRouter.use('/platform', platformRouter);
+apiRouter.use('/idp-settings', idpSettingsRouter);
 apiRouter.use('/catalog', catalogRouter);
 // SAML-only deployments (FEATURE_OAUTH_ONBOARDING off, the default) don't
 // mount this route at all, so onboarding OAuth clients 404s rather than
