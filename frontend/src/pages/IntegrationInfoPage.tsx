@@ -342,6 +342,7 @@ export function IntegrationInfoPage() {
 
           <SectionCard title="Service Provider (this app) — for the IdP's relying-party setup">
             <CopyField label="SP Entity ID" value={data.saml.spEntityId} />
+            <CopyField label="SP SSO Login URL (SP-initiated)" value={data.saml.loginUrl} />
             <div className="grid gap-3 sm:grid-cols-2">
               <CopyField label="Assertion Consumer Service (ACS) URL" value={data.saml.acsUrl} />
               <CopyField label="ACS Binding" value={data.saml.acsBinding} mono={false} />

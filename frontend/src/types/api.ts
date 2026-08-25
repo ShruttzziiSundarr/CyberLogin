@@ -163,6 +163,7 @@ export interface LoginRequest {
 export interface IntegrationInfo {
   saml: {
     spEntityId: string;
+    loginUrl: string;
     acsUrl: string;
     acsBinding: 'HTTP-POST';
     sloUrl: string;

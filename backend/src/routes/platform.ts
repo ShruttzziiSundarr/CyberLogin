@@ -20,6 +20,7 @@ platformRouter.get('/integration-info', (_req, res) => {
   res.json({
     saml: {
       spEntityId: settings.spEntityId,
+      loginUrl: samlEndpoints.login,
       acsUrl: samlEndpoints.acs,
       acsBinding: 'HTTP-POST',
       sloUrl: samlEndpoints.sloRequest,
