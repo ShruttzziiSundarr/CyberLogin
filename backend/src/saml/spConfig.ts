@@ -9,6 +9,13 @@ function readCert(filePath: string): string {
   return fs.readFileSync(resolved, 'utf8');
 }
 
+// SP_BASE_URL is an operator-supplied env var; a trailing slash there (e.g.
+// "https://host.com/") would otherwise get concatenated straight into
+// "https://host.com//api/saml/acs" below - a path Express never matches,
+// since "//api" isn't the same route as "/api". Strip it so the same
+// misconfiguration can't silently break routing again.
+const spBaseUrl = env.SP_BASE_URL.replace(/\/+$/, '');
+
 const REQUEST_ID_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours, matches node-saml's own default
 
 // getSamlClient() below builds a fresh SAML instance per call (so edited IdP
@@ -52,10 +59,10 @@ export const spPrivateKey = env.SP_PRIVATE_KEY || readCert(env.SP_PRIVATE_KEY_PA
 export const spCertificate = env.SP_CERTIFICATE || readCert(env.SP_CERTIFICATE_PATH);
 
 export const samlEndpoints = {
-  metadata: `${env.SP_BASE_URL}/api/saml/metadata`,
-  acs: `${env.SP_BASE_URL}/api/saml/acs`,
-  login: `${env.SP_BASE_URL}/api/saml/login`,
-  sloRequest: `${env.SP_BASE_URL}/api/saml/slo`
+  metadata: `${spBaseUrl}/api/saml/metadata`,
+  acs: `${spBaseUrl}/api/saml/acs`,
+  login: `${spBaseUrl}/api/saml/login`,
+  sloRequest: `${spBaseUrl}/api/saml/slo`
 };
 
 export function isIdpConfigured(): boolean {
