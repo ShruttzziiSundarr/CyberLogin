@@ -40,6 +40,16 @@ samlRouter.post('/acs', async (req, res, next) => {
   try {
     const { profile } = await getSamlClient().validatePostResponseAsync(req.body);
     if (!profile?.nameID) {
+      // The response validated (signature/issuer/etc. all checked out), but the
+      // assertion itself carries no usable Subject/NameID - almost always means
+      // the IdP's SP connection never had SAML_SUBJECT mapped in its attribute
+      // contract fulfillment, or the NameID was sent encrypted (EncryptedID)
+      // rather than plain, which this library does not decrypt. Log everything
+      // node-saml did manage to parse so it's possible to tell which.
+      logger.warn(
+        { profile, assertionXml: profile?.getAssertionXml?.(), responseXml: profile?.getSamlResponseXml?.() },
+        'SAML assertion had no Subject/NameID'
+      );
       return res.status(401).json({ error: { code: 'saml_no_subject', message: 'Assertion did not include a subject' } });
     }
 
