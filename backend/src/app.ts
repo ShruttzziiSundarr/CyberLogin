@@ -54,7 +54,15 @@ export function createApp() {
       cookie: {
         httpOnly: true,
         secure: env.COOKIE_SECURE,
-        sameSite: 'strict',
+        // 'lax', not 'strict': the SAML ACS callback is PingFederate POSTing to
+        // this app from its own domain - a cross-site top-level navigation. A
+        // Strict session cookie can fail to attach on the page load immediately
+        // following that redirect in some browsers, which looks exactly like
+        // "SSO succeeds but bounces back to /login" (AuthGuard's session check
+        // finds no cookie). Lax still excludes the cookie from cross-site
+        // POST/XHR, so this doesn't weaken CSRF protection for state-changing
+        // requests - that's handled by the separate CSRF token, not SameSite.
+        sameSite: 'lax',
         maxAge: 1000 * 60 * 60 * 8
       }
     })
